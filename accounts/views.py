@@ -70,10 +70,17 @@ def login_view(request):
                 otp=otp
             )
 
-            send_login_otp(
+            email_sent = send_login_otp(
                 user,
                 otp
             )
+
+            if not email_sent:
+                messages.error(
+                    request,
+                    "Failed to send OTP email. Please try again."
+                )
+                return redirect("login")
 
             request.session["otp_user"] = user.id
 

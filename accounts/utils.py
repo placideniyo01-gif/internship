@@ -15,9 +15,7 @@ def generate_token():
 
 def send_verification_email(user, token):
 
-    verify_url = (
-        f"http://127.0.0.1:8000/verify-email/{token}/"
-    )
+    verify_url = f"https://internship-8lo5.onrender.com/verify-email/{token}/"
 
     subject = "Verify Your Email"
 
@@ -56,19 +54,23 @@ Your login code is:
 This code expires in 5 minutes.
 """
 
-    send_mail(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False
-    )
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False
+        )
+        return True
+
+    except Exception as e:
+        print("EMAIL ERROR:", str(e))
+        return False
 
 def send_password_reset_email(user, token):
 
-    reset_url = (
-        f"http://127.0.0.1:8000/reset-password/{token}/"
-    )
+    reset_url = f"https://internship-8lo5.onrender.com/reset-password/{token}/"
 
     subject = "Reset Password"
 
