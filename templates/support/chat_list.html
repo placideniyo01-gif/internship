@@ -1,0 +1,20 @@
+{% for item in user_data %}
+
+<a href="{% url 'admin_chat' item.user.id %}">
+    {{ item.user.username }}
+
+    {% if item.unread > 0 %}
+        <span style="
+            background:green;
+            color:white;
+            padding:4px 8px;
+            border-radius:50%;
+        ">
+            {{ item.unread }}
+        </span>
+    {% endif %}
+</a>
+
+{% empty %}
+    <p>No users found</p>
+{% endfor %}

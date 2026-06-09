@@ -1,0 +1,187 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Deposit</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f5f5f5;
+}
+
+.container{
+    max-width:500px;
+    margin:40px auto;
+    background:white;
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 0 20px rgba(0,0,0,.1);
+}
+
+.warning{
+    background:#fff7ed;
+    color:#c2410c;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+.wallet-box{
+    background:#111827;
+    color:white;
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:20px;
+}
+
+.wallet-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.copy-btn{
+    border:none;
+    background:#10b981;
+    color:white;
+    padding:6px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:12px;
+}
+
+.notification{
+    display:none;
+    background:#16a34a;
+    color:white;
+    padding:10px;
+    border-radius:10px;
+    margin-bottom:15px;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-bottom:15px;
+}
+
+button.submit{
+    width:100%;
+    background:#10b981;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <h2>Deposit USDT</h2>
+
+    <div class="warning">
+        ⚠ Use TRC20 network only.<br>
+        Minimum Deposit: <b>10 USDT</b>
+    </div>
+
+    <div id="copied" class="notification">
+        Wallet copied successfully.
+    </div>
+
+    <div class="wallet-box">
+
+        <div class="wallet-row">
+
+            <span id="wallet">
+                TCstv6LGK2oMF5MFvqpaA8Ypyi1b1CrGqh
+            </span>
+
+            <button
+                type="button"
+                class="copy-btn"
+                onclick="copyWallet()"
+            >
+                Copy
+            </button>
+
+        </div>
+
+    </div>
+
+    <form
+        method="POST"
+        enctype="multipart/form-data"
+    >
+
+        {% csrf_token %}
+
+        <label>Amount (USDT)</label>
+
+        <input
+            type="number"
+            name="amount"
+            min="10"
+            required
+        >
+
+        <label>
+            Payment Proof Screenshot
+        </label>
+
+        <input
+            type="file"
+            name="proof"
+            accept="image/*"
+            required
+        >
+
+        <button
+            class="submit"
+            type="submit"
+        >
+            Confirm Deposit
+        </button>
+
+    </form>
+
+</div>
+
+<script>
+
+function copyWallet(){
+
+    let wallet =
+    document.getElementById(
+        "wallet"
+    ).innerText;
+
+    navigator.clipboard.writeText(
+        wallet
+    );
+
+    let notice =
+    document.getElementById(
+        "copied"
+    );
+    notice.style.display="block";
+
+    setTimeout(function(){
+
+        notice.style.display="none";
+
+    },3000);
+}
+
+</script>
+
+</body>
+</html>

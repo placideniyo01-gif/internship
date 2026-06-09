@@ -1,0 +1,291 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasury Dashboard</title>
+
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <div class="header">
+
+        <a href="{% url 'settings' %}" class="settings-btn">
+            ⚙️settings
+        </a>
+
+    </div>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <h3>Hello</h3>
+        <h1>{{ username|upper }}</h1>
+    </div>
+
+    <!-- BALANCE -->
+    <div class="balance-card">
+        <h4>Balance</h4>
+
+        <div class="amount" id="balance">
+            ${{ balance }}
+        </div>
+
+        <div class="total-balance">
+            Total Balance
+        </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="action-row">
+
+        <a href="{% url 'deposit' %}">
+            <button class="deposit">Deposit</button>
+        </a>
+
+        <a href="{% url 'deposit_history' %}">
+            <button class="withdraw">History</button>
+        </a>
+
+        <a href="{% url 'withdraw' %}">
+            <button class="withdraw">Withdraw</button>
+        </a>
+
+        <a href="/support/" class="support-btn" style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999;
+        ">
+            Support
+
+            {% if unread_support > 0 %}
+            <span class="badge" style="
+                position:absolute;
+                top:-8px;
+                right:-8px;
+                background:red;
+                color:white;
+                border-radius:50%;
+                padding:4px 7px;
+                font-size:12px;
+                font-weight:bold;
+            ">
+                {{ unread_support }}
+            </span>
+            {% endif %}
+        </a>
+
+    </div>
+
+    <!-- INTEREST -->
+    <div class="interest-card">
+
+        <div>
+            <h4>4% Daily Interest</h4>
+
+            <p class="ref-bonus">
+                + {{ daily_ref_bonus_percent|default:"0" }}% Daily Referral Bonuses
+            </p>
+
+            <h1 id="interest">
+                ${{ interest }}
+            </h1>
+        </div>
+
+        <a href="{% url 'claim_interest' %}">
+            <button class="claim">Claim</button>
+        </a>
+
+    </div>
+
+    <!-- REFERRAL -->
+    <div class="referral-card">
+
+        <h2>🎁 Referral Program</h2>
+
+        <p>
+            Invite users using your referral link. Bonuses start when they deposit.
+        </p>
+
+        <input type="text" id="refLink" value="{{ referral_link }}" readonly>
+
+        <button class="copy-btn" onclick="copyLink()">Copy Referral Link</button>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+
+            <div class="box">
+                <h3>👥 Referrals</h3>
+                <h2>{{ referrals }}</h2>
+            </div>
+
+            <div class="box">
+                <h3>🚀 Active Bonus</h3>
+
+                <h2 id="active_bonus">
+                    ${{ active_bonus }}
+                </h2>
+
+                <a href="{% url 'claim_referral_bonus' %}">
+                    <button class="claim-small">
+                        Claim
+                    </button>
+                </a>
+            </div>
+
+            <div class="box">
+                <h3>🔒 Locked Bonus</h3>
+
+                <h2 id="locked_bonus">
+                    ${{ locked_bonus }}
+                </h2>
+            </div>
+
+            <div class="box">
+                <h3>💰 Referral Profit</h3>
+
+                <h2 id="referral_profit">
+                    ${{ referral_profit }}
+                </h2>
+            </div>
+
+        </div>
+
+        <!-- TEAM -->
+        <h3>Your Referral Team</h3>
+
+        <table width="100%" border="1">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Status</th>
+                    <th>Referral Bonus</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            {% for member in team %}
+                <tr>
+
+                    <td>
+                        {{ member.referred_user.username }}
+                    </td>
+
+                    <td>
+                        {% if member.referred_user.profile.total_deposit > 0 %}
+                            ✅ Active
+                        {% else %}
+                            ⏳ Inactive
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if member.referral_bonus %}
+                            +{{ member.referral_bonus }}% Daily
+                        {% else %}
+                            No Bonus
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {{ member.created_at|date:"d M Y" }}
+                    </td>
+
+                </tr>
+
+            {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align:center;">
+                        No referrals yet
+                    </td>
+                </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<!-- SCRIPTS -->
+
+<script>
+function copyLink() {
+    let copyText = document.getElementById("refLink");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(copyText.value);
+    alert("Referral link copied successfully!");
+}
+</script>
+
+<script>
+let interest = parseFloat("{{ interest }}");
+let ratePerSecond = parseFloat("{{ interest_rate_per_second }}");
+
+setInterval(() => {
+    interest += ratePerSecond;
+    document.getElementById("interest").innerHTML =
+        "$" + interest.toFixed(8);
+}, 1000);
+</script>
+
+<script>
+
+async function updateBalance(){
+
+    try{
+
+        const response = await fetch(
+            "/dashboard/live-balance/"
+        );
+
+        const data = await response.json();
+
+        document.getElementById(
+            "balance"
+        ).innerHTML =
+        "$" + data.balance.toFixed(8);
+
+        document.getElementById(
+            "active_bonus"
+        ).innerHTML =
+        "$" + data.active_bonus.toFixed(8);
+
+        document.getElementById(
+            "locked_bonus"
+        ).innerHTML =
+        "$" + data.locked_bonus.toFixed(8);
+
+        document.getElementById(
+            "referral_profit"
+        ).innerHTML =
+        "$" + data.referral_profit.toFixed(8);
+
+    }catch(err){
+
+        console.log(err);
+
+    }
+
+}
+
+setInterval(
+    updateBalance,
+    1000
+);
+</script>
+
+</body>
+</html>

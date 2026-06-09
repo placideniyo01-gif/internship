@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Support Chat</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,sans-serif;
+}
+
+body{
+    background:#0f172a;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+.header{
+    background:#111827;
+    color:white;
+    padding:20px;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.chat-box{
+    flex:1;
+    overflow-y:auto;
+    padding:20px;
+    padding-bottom:180px;
+}
+
+.msg{
+    max-width:70%;
+    padding:12px;
+    border-radius:15px;
+    margin-bottom:15px;
+    word-wrap:break-word;
+}
+
+.mine{
+    background:#22c55e;
+    color:white;
+    margin-left:auto;
+}
+
+.theirs{
+    background:#334155;
+    color:white;
+}
+
+.msg img{
+    width:100%;
+    max-width:300px;
+    border-radius:10px;
+    margin-top:10px;
+}
+
+.msg audio{
+    width:100%;
+    margin-top:10px;
+}
+
+.time{
+    font-size:12px;
+    opacity:.7;
+    margin-top:5px;
+}
+
+.send-box{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:#111827;
+    padding:15px;
+}
+
+textarea{
+    width:100%;
+    height:80px;
+    border:none;
+    border-radius:10px;
+    padding:10px;
+    resize:none;
+    margin-bottom:10px;
+}
+
+.files{
+    display:flex;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+button{
+    background:#22c55e;
+    color:white;
+    border:none;
+    padding:12px 25px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+</style>
+
+</head>
+
+<body data-user="{{ request.user.username }}">
+
+<div class="header">
+    Support Chat
+</div>
+
+<div class="chat-box" id="chatBox">
+
+{% for msg in messages %}
+
+<div class="msg {% if msg.sender == request.user %}mine{% else %}theirs{% endif %}">
+
+    {% if msg.message %}
+    <div>{{ msg.message }}</div>
+    {% endif %}
+
+    {% if msg.image %}
+    <img src="{{ msg.image.url }}">
+    {% endif %}
+
+    {% if msg.voice %}
+    <audio controls>
+        <source src="{{ msg.voice.url }}">
+    </audio>
+    {% endif %}
+
+    <div class="time">
+        {{ msg.created_at|date:"H:i" }}
+    </div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<div class="send-box">
+
+<form
+    id="chatForm"
+    enctype="multipart/form-data"
+>
+
+{% csrf_token %}
+
+<textarea
+    id="messageInput"
+    name="message"
+    placeholder="Type message..."
+></textarea>
+
+<div class="files">
+
+    <input
+        type="file"
+        name="image"
+        accept="image/*"
+    >
+
+    <input
+        type="file"
+        name="voice"
+        accept="audio/*"
+    >
+
+</div>
+
+<button type="submit">
+    Send
+</button>
+
+</form>
+
+</div>
+
+<script>
+
+const chat =
+document.getElementById("chatBox");
+
+const form =
+document.getElementById("chatForm");
+
+const currentUser =
+document.body.dataset.user;
+
+chat.scrollTop =
+chat.scrollHeight;
+
+function loadMessages(){
+
+    fetch("messages/")
+    .then(response => response.json())
+    .then(data => {
+
+        let html = "";
+
+        data.forEach(msg => {
+
+            const cls =
+            msg.sender === currentUser
+            ? "mine"
+            : "theirs";
+
+            html += `
+            <div class="msg ${cls}">
+
+                ${msg.message
+                    ? `<div>${msg.message}</div>`
+                    : ""
+                }
+
+                ${msg.image
+                    ? `<img src="${msg.image}">`
+                    : ""
+                }
+
+                ${msg.voice
+                    ? `
+                    <audio controls>
+                        <source src="${msg.voice}">
+                    </audio>
+                    `
+                    : ""
+                }
+
+                <div class="time">
+                    ${msg.time}
+                </div>
+
+            </div>
+            `;
+        });
+
+        const isNearBottom =
+            chat.scrollHeight -
+            chat.scrollTop <=
+            chat.clientHeight + 150;
+
+        chat.innerHTML = html;
+
+        if(isNearBottom){
+            chat.scrollTop =
+            chat.scrollHeight;
+        }
+
+    });
+
+}
+
+form.addEventListener(
+"submit",
+function(e){
+
+    e.preventDefault();
+
+    const formData =
+    new FormData(form);
+
+    fetch("send/",{
+        method:"POST",
+        body:formData
+    })
+    .then(response => response.json())
+    .then(data => {
+
+        if(data.success){
+
+            form.reset();
+
+            loadMessages();
+
+            setTimeout(() => {
+
+                chat.scrollTop =
+                chat.scrollHeight;
+
+            },200);
+
+        }
+
+    });
+
+});
+
+setInterval(loadMessages,2000);
+
+</script>
+
+</body>
+</html>

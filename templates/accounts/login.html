@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="auth-card">
+
+    <div class="logo-circle">
+        <i class="fa-solid fa-user"></i>
+    </div>
+
+    <h1>Welcome Back</h1>
+    <p class="subtitle">Login to your account</p>
+
+    {% for message in messages %}
+        <div class="message">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="input-group">
+            <i class="fa-solid fa-user"></i>
+            <input type="text"
+                   name="username"
+                   placeholder="Username"
+                   required>
+        </div>
+
+        <div class="input-group">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password"
+                   name="password"
+                   placeholder="Password"
+                   required>
+        </div>
+
+        <div class="links">
+            <a href="{% url 'forgot_password' %}">
+                Forgot Password?
+            </a>
+        </div>
+
+        <button class="btn-auth" type="submit">
+            Login
+        </button>
+
+    </form>
+
+    <div class="bottom-link">
+        Don't have an account?
+        <a href="{% url 'signup' %}">
+            Create Account
+        </a>
+    </div>
+
+</div>
+
+</body>
+</html>

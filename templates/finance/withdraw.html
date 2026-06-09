@@ -1,0 +1,159 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Withdraw</title>
+
+    <link rel="stylesheet"
+          href="{% static 'css/style.css' %}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+        <h3>Withdraw</h3>
+
+        <h1>USDT TRC20</h1>
+
+    </div>
+
+    <div class="referral-card">
+
+        <h2>⚠ Withdrawal Rules</h2>
+
+        <p>
+            Withdrawals are processed only
+            through USDT TRC20 wallets.
+        </p>
+
+        <p>
+            Minimum withdrawal amount:
+            <strong>
+                $100
+            </strong>
+        </p>
+
+        <p>
+            Users with at least
+            <strong>
+                2 active referrals
+            </strong>
+            can withdraw below $100.
+        </p>
+
+    </div>
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="interest-card">
+
+                <h4>
+                    {{ message }}
+                </h4>
+
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+    {% if form.errors %}
+
+    <div class="referral-card">
+
+        <h3>Errors</h3>
+
+        {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+        {% endfor %}
+
+        {% for field in form %}
+            {% for error in field.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endfor %}
+
+    </div>
+
+    {% endif %}
+
+    <div class="balance-card">
+
+        <h4>Available Balance</h4>
+
+        <div class="amount">
+            ${{ request.user.profile.balance }}
+        </div>
+    </div>
+
+    <div class="referral-card">
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+            <label>
+                Amount (USDT)
+            </label>
+
+            <br><br>
+
+            {{ form.amount }}
+
+            <br><br>
+
+            <label>
+                TRC20 Wallet Address
+            </label>
+
+            <br><br>
+
+            {{ form.wallet_address }}
+
+            <br><br>
+
+            <button
+                type="submit"
+                class="claim">
+
+                Submit Request
+
+            </button>
+
+        </form>
+
+    </div>
+
+    <div class="action-row">
+
+        <a href="{% url 'dashboard' %}">
+
+            <button class="withdraw">
+
+                Back Dashboard
+
+            </button>
+
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

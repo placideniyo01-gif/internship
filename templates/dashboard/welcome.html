@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Welcome</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+background:#0f172a;
+color:white;
+padding:30px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+}
+
+.card{
+background:#111827;
+padding:30px;
+border-radius:20px;
+margin-bottom:25px;
+box-shadow:0 0 20px rgba(0,0,0,.3);
+}
+
+h1{
+color:#22c55e;
+margin-bottom:15px;
+}
+
+h2{
+color:#22c55e;
+margin-bottom:15px;
+}
+
+p{
+line-height:1.8;
+margin-bottom:10px;
+}
+
+ul{
+padding-left:20px;
+line-height:2;
+}
+
+.btn{
+display:inline-block;
+margin-top:20px;
+background:#22c55e;
+color:white;
+padding:15px 35px;
+border-radius:12px;
+text-decoration:none;
+font-weight:bold;
+}
+
+.btn:hover{
+opacity:.9;
+}
+
+.highlight{
+color:#22c55e;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h1>
+🎉 Welcome To Internship USDT Saving Platform
+</h1>
+
+<p>
+
+We are delighted to welcome you to our growing investment community.
+
+This platform allows members to grow their capital through deposits,
+daily earnings, and referral rewards.
+
+Please take a moment to read the information below before continuing to your dashboard.
+
+</p>
+
+</div>
+
+
+<div class="card">
+
+<h2>
+💰 How Deposits Work
+</h2>
+
+<ul>
+
+<li>
+Create a deposit request.
+</li>
+
+<li>
+Upload your payment proof.
+</li>
+
+<li>
+Wait for admin verification.
+</li>
+
+<li>
+After approval, your balance will be credited.
+</li>
+
+<li>
+4% Daily profits begin automatically according to your investment plan.
+</li>
+
+</ul>
+
+</div>
+
+
+<div class="card">
+
+<h2>
+👥 Referral Program
+</h2>
+
+<p>
+
+Every member receives a personal referral link.
+
+Share your referral link with friends, family members, and other investors.
+
+When someone registers using your referral link and makes their first deposit, you receive a % referral commission.
+
+</p>
+
+<ul>
+
+<li>
+Level 1 Referral Commission(when referred user first deposit < 100 usdt):
+<span class="highlight">additional of 0.1% on daily interest</span>
+</li>
+
+<li>
+Level 2 Referral Commission (when referred user first deposit < 500 usdt): 
+<span class="highlight">additional of 0.2% on daily interest</span>
+</li>
+
+<li>
+Level 3 Referral Commission (when referred user first deposit > 500 usdt):
+<span class="highlight">additional of 0.3% on daily interest</span>
+</li>
+
+</ul>
+
+<p>
+
+Example:
+
+If your direct referral deposits
+<span class="highlight">$100</span>
+
+you instantly earn
+
+<span class="highlight">daily interest 4% + 0.1% = 4.1% daily, on your balance</span>
+
+as a referral reward.
+
+</p>
+
+<p>
+
+ N.B: referral commission valid until end of 3months.
+ 
+The more active referrals you bring,
+the higher your earnings become.
+
+</p>
+
+</div>
+
+
+<div class="card">
+
+<h2>
+📈 Daily Profit System
+</h2>
+
+<p>
+
+After your deposit is approved,
+the platform automatically calculates your profit.
+
+Your profits accumulate daily and can be withdrawn according to platform rules.
+
+</p>
+
+</div>
+
+
+<div class="card">
+
+<h2>
+💸 Withdrawals
+</h2>
+
+<ul>
+
+<li>
+One withdrawal request is allowed every week.
+</li>
+
+<li>
+Enter your correct wallet address carefully.
+</li>
+
+<li>
+Admin reviews and processes withdrawals manually.
+</li>
+
+<li>
+Approved withdrawals are sent directly to your wallet.
+</li>
+
+</ul>
+
+</div>
+
+
+<div class="card">
+
+<h2>
+💬 Support Center
+</h2>
+
+<p>
+
+If you experience any problem or have questions,
+you can contact support directly from the Support Chat page.
+
+You may send:
+
+</p>
+
+<ul>
+
+<li>Text Messages</li>
+<li>Images</li>
+<li>Voice Messages</li>
+
+</ul>
+
+<p>
+
+Our support team will assist you as quickly as possible.
+
+</p>
+
+</div>
+
+
+<div class="card">
+
+<h2>
+⚠ Important Notice
+</h2>
+
+<ul>
+
+<li>
+Keep your account information secure.
+</li>
+
+<li>
+Never share your password.
+</li>
+
+<li>
+Always double-check wallet addresses before submitting withdrawals.
+</li>
+
+<li>
+Read platform updates regularly.
+</li>
+
+</ul>
+
+</div>
+
+<center>
+
+<a
+href="{% url 'dashboard' %}"
+class="btn"
+>
+Continue To Dashboard
+</a>
+
+</center>
+
+</div>
+
+</body>
+</html>

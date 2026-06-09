@@ -1,0 +1,175 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    background-image:url("/static/images/bg.jpg");
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+}
+
+.auth-card{
+
+    width:430px;
+
+    padding:45px;
+
+    border-radius:35px;
+
+    backdrop-filter:blur(20px);
+
+    background:rgba(255,255,255,.12);
+
+    border:1px solid rgba(255,255,255,.2);
+
+    box-shadow:0 8px 32px rgba(0,0,0,.3);
+
+    text-align:center;
+}
+
+.logo-circle{
+
+    width:90px;
+    height:90px;
+
+    margin:auto;
+
+    border-radius:50%;
+
+    background:white;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:35px;
+    color:#3461ff;
+}
+
+h1{
+    margin-top:20px;
+    color:white;
+}
+
+.subtitle{
+    color:white;
+    opacity:.8;
+    margin:10px 0 25px;
+}
+
+.input-group{
+
+    display:flex;
+    align-items:center;
+
+    background:white;
+
+    border-radius:15px;
+
+    padding:0 15px;
+
+    margin-bottom:15px;
+}
+
+.input-group i{
+    color:#777;
+}
+
+.input-group input{
+
+    width:100%;
+
+    border:none;
+    outline:none;
+
+    padding:16px;
+    background:none;
+}
+
+.links{
+    text-align:right;
+    margin-bottom:20px;
+}
+
+.links a{
+    color:white;
+    text-decoration:none;
+}
+
+.btn-auth{
+
+    width:100%;
+
+    border:none;
+
+    padding:15px;
+
+    border-radius:15px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+    font-weight:600;
+
+    color:white;
+
+    background:
+    linear-gradient(
+        135deg,
+        #4f7eff,
+        #2450ff
+    );
+}
+
+.btn-auth:hover{
+    transform:translateY(-2px);
+}
+
+.bottom-link{
+
+    margin-top:20px;
+
+    color:white;
+}
+
+.bottom-link a{
+
+    color:white;
+
+    text-decoration:none;
+
+    font-weight:bold;
+}
+
+.message{
+
+    background:#ffeaea;
+
+    color:#cc0000;
+
+    padding:10px;
+
+    border-radius:10px;
+
+    margin-bottom:15px;
+}
+
+@media(max-width:500px){
+
+    .auth-card{
+        width:95%;
+        padding:30px;
+    }
+
+}
