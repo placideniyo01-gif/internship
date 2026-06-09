@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-jbml&s=o(+5@r9jerh!^#cb25g-_=04my1e9yzibcplb7d$vp=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
