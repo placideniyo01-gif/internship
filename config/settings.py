@@ -150,7 +150,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = 'smtp-relay.brevo.com'
 
 EMAIL_PORT = 587
 
@@ -163,7 +163,7 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
 EMAIL_TIMEOUT = 10
 
-DEFAULT_FROM_EMAIL = 'Internship Saving <placidebyke04@gmail.com>'
+DEFAULT_FROM_EMAIL = 'Internship Saving <ae268a001@smtp-brevo.com>'
 SERVER_EMAIL = 'Internship Saving <placidebyke04@gmail.com>'
 
 LOGIN_URL = '/'
