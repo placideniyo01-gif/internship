@@ -63,28 +63,12 @@ def login_view(request):
 
                 return redirect("login")
 
-            otp = generate_otp()
-
-            EmailOTP.objects.create(
-                user=user,
-                otp=otp
-            )
-
-            email_sent = send_login_otp(
-                user,
-                otp
-            )
-
-            if not email_sent:
-                messages.error(
+                login(
                     request,
-                    "Failed to send OTP email. Please try again."
+                    user
                 )
-                return redirect("login")
 
-            request.session["otp_user"] = user.id
-
-            return redirect("verify_otp")
+                return redirect("welcome")
 
         messages.error(
             request,

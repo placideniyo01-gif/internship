@@ -163,7 +163,7 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
 EMAIL_TIMEOUT = 10
 
-DEFAULT_FROM_EMAIL = 'Internship Saving <ae268a001@smtp-brevo.com>'
+DEFAULT_FROM_EMAIL = 'Internship Saving <placidebyke04@gmail.com>'
 SERVER_EMAIL = 'Internship Saving <placidebyke04@gmail.com>'
 
 LOGIN_URL = '/'
