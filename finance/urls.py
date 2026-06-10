@@ -21,10 +21,4 @@ urlpatterns = [
         name="withdraw"
     ),
 
-    path(
-        "verify-withdraw-otp/",
-        views.verify_withdraw_otp,
-        name="verify_withdraw_otp"
-    ),
-
 ]
