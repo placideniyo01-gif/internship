@@ -47,34 +47,41 @@ class DepositAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
 
-        super().save_model(
-            request,
-            obj,
-            form,
-            change
-        )
-
-        if obj.status == "Approved" and not obj.credited:
-
-            profile = Profile.objects.get(
-                user=obj.user
+        try:
+            super().save_model(
+                request,
+                obj,
+                form,
+                change
             )
 
-            profile.balance += obj.amount
-            profile.total_deposit += obj.amount
-            profile.save()
+            if obj.status == "Approved" and not obj.credited:
 
-            if profile.referrer:
-
-                ReferralBonus.objects.create(
-                    referrer=profile.referrer,
-                    referred_user=obj.user,
-                    rate=Decimal("0.01")
+                profile = Profile.objects.get(
+                    user=obj.user
                 )
 
-            obj.credited = True
-            obj.save()
+                profile.balance += obj.amount
+                profile.total_deposit += obj.amount
+                profile.save()
 
+                if profile.referrer:
+
+                    ReferralBonus.objects.create(
+                        referrer=profile.referrer,
+                        referred_user=obj.user,
+                        rate=Decimal("0.01")
+                    )
+
+                obj.credited = True
+                obj.save()
+
+        except Exception as e:
+
+            print("ERROR TYPE:", type(e))
+            print("ERROR MESSAGE:", str(e))
+
+            raise
 
 @admin.register(Withdrawal)
 class WithdrawalAdmin(admin.ModelAdmin):
