@@ -42,6 +42,8 @@ def login_view(request):
         username = request.POST.get("username")
         password = request.POST.get("password")
 
+        print("LOGIN ATTEMPT")
+        
         user = authenticate(
             request,
             username=username,
@@ -64,10 +66,14 @@ def login_view(request):
 
                 return redirect("login")
 
+                print("BEFORE LOGIN")
+
                 login(
                     request,
                     user
                 )
+
+                print("AFTER LOGIN")
 
                 return redirect("welcome")
 
