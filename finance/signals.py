@@ -1,10 +1,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Withdrawal
-from .models import Deposit
-from django.core.mail import send_mail
-from django.conf import settings
-from accounts.utils import send_transaction_notification
+
+from .models import Deposit, Withdrawal
+
 from accounts.models import (
     Profile,
     Referral,
@@ -60,45 +58,29 @@ def credit_balance(sender, instance, **kwargs):
             pass
 
         instance.credited = True
-        instance.save()
+        instance.save(
+            update_fields=["credited"]
+        )
 
-@receiver(post_save, sender=Deposit)
-def deposit_notification(sender, instance, created, **kwargs):
+
+@receiver(post_save, sender=Withdrawal)
+def process_withdrawal(sender, instance, **kwargs):
 
     if (
         instance.status == "Approved"
-        and not instance.notification_sent
+        and not instance.processed
     ):
 
-        send_mail(
-            "Deposit Approved",
-            f"Dear {instance.user.username},\n\n"
-            f"Your deposit of {instance.amount} USDT has been approved successfully.",
-            settings.DEFAULT_FROM_EMAIL,
-            [instance.user.email],
-            fail_silently=False,
+        profile = Profile.objects.get(
+            user=instance.user
         )
 
-        instance.notification_sent = True
-        instance.save(update_fields=["notification_sent"])
-        
-@receiver(post_save, sender=Withdrawal)
-def withdrawal_notification(sender, instance, created, **kwargs):
+        if profile.balance >= instance.amount:
 
-    if (
-        instance.status in ["Approved", "Rejected"]
-        and not instance.notification_sent
-    ):
+            profile.balance -= instance.amount
+            profile.save()
 
-        send_mail(
-            f"Withdrawal {instance.status}",
-            f"Dear {instance.user.username},\n\n"
-            f"Your withdrawal request of {instance.amount} USDT "
-            f"has been {instance.status.lower()}.",
-            settings.DEFAULT_FROM_EMAIL,
-            [instance.user.email],
-            fail_silently=False,
-        )
-
-        instance.notification_sent = True
-        instance.save(update_fields=["notification_sent"])
+            instance.processed = True
+            instance.save(
+                update_fields=["processed"]
+            )
