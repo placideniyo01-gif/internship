@@ -43,7 +43,7 @@ def login_view(request):
         password = request.POST.get("password")
 
         print("LOGIN ATTEMPT")
-        
+
         user = authenticate(
             request,
             username=username,
@@ -251,19 +251,20 @@ def signup_view(request):
             token=token
         )
 
-        send_verification_email(
-            user,
-            token
-        )
+        try:
+            send_verification_email(
+                user,
+                token
+            )
+            print("EMAIL SENT SUCCESSFULLY")
 
-        messages.success(
-            request,
-            "Verification email sent. Check your inbox."
-        )
-
-        return redirect(
-            "login"
-        )
+        except Exception as e:
+            print("EMAIL ERROR:", str(e))
+            messages.error(
+                request,
+                f"Email Error: {e}"
+            )
+            return redirect("signup")
 
     return render(
         request,
