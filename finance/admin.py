@@ -20,7 +20,7 @@ class DepositAdmin(admin.ModelAdmin):
         "user",
         "amount",
         "status",
-        "proof",
+        "view_proof",
         "created_at",
     )
 
@@ -32,18 +32,33 @@ class DepositAdmin(admin.ModelAdmin):
         "status",
     )
 
-    fields = (
-        "user",
-        "amount",
-        "proof",
-        "status",
-    )
-
     readonly_fields = (
         "user",
         "amount",
         "proof",
+        "view_proof",
     )
+
+    fields = (
+        "user",
+        "amount",
+        "proof",
+        "view_proof",
+        "status",
+    )
+
+    def view_proof(self, obj):
+
+        if obj.proof:
+
+            return format_html(
+                '<a href="{}" target="_blank">View Proof</a>',
+                obj.proof.url
+            )
+
+        return "No Proof"
+
+    view_proof.short_description = "Proof"
 
     def save_model(self, request, obj, form, change):
 
