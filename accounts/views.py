@@ -49,10 +49,11 @@ def login_view(request):
         )
 
         if user:
+            profile = Profile.objects.get(user=user)
 
-            profile = Profile.objects.get(
-                user=user
-            )
+            print("USER =", user.username)
+            print("ACTIVE =", user.is_active)
+            print("VERIFIED =", profile.email_verified)
 
             if not profile.email_verified:
 
