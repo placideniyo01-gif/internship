@@ -282,3 +282,44 @@ def admin_chat_list(request):
             "user_data": user_data
         }
     )
+
+Nta kibazo, reka tugende buhoro buhoro. Iki gice cyose kijya muri support app, si muri dashboard.
+
+1. Shyira view muri support/views.py
+
+Fungura:
+
+support/views.py
+
+Hasi cyane (cyangwa ahandi hose muri iyo file) wongereho:
+
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+from django.contrib.admin.views.decorators import staff_member_required
+
+@staff_member_required
+def admin_unread_counts(request):
+
+    data = []
+
+    users = User.objects.filter(
+        is_staff=False
+    )
+
+    for user in users:
+
+        unread = SupportMessage.objects.filter(
+            sender=user,
+            receiver=request.user,
+            seen=False
+        ).count()
+
+        data.append({
+            "id": user.id,
+            "unread": unread
+        })
+
+    return JsonResponse(
+        data,
+        safe=False
+    )

@@ -51,4 +51,10 @@ urlpatterns = [
         name="admin_chat"
     ),
 
+    path(
+        "admin-unread/",
+        views.admin_unread_counts,
+        name="admin_unread"
+    ),
+
 ]

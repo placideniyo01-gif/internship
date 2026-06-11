@@ -576,3 +576,18 @@ def delete_account(request):
         return redirect("login")
 
     return redirect("settings")
+
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
+def unread_support_count(request):
+
+    count = SupportMessage.objects.filter(
+        receiver=request.user,
+        seen=False
+    ).count()
+
+    return JsonResponse({
+        "count": count
+    })

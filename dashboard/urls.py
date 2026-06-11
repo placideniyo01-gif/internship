@@ -36,4 +36,11 @@ urlpatterns = [
         views.delete_account,
         name="delete_account"
     ),
+
+    path(
+        "dashboard/unread-support/",
+        views.unread_support_count,
+        name="unread_support_count"
+    ),
+
 ]

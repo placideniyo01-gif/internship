@@ -167,18 +167,25 @@ opacity:.7;
 
 {{ item.user.username }}
 
-{% if item.unread > 0 %}
-<span style="
+<span
+class="badge"
+data-user="{{ item.user.id }}"
+style="
 background:green;
 color:white;
 padding:4px 8px;
 border-radius:50%;
 font-size:12px;
 margin-left:10px;
-">
-{{ item.unread }}
-</span>
+
+{% if item.unread == 0 %}
+display:none;
 {% endif %}
+">
+
+{{ item.unread }}
+
+</span>
 
 </a>
 
@@ -351,13 +358,12 @@ chat.scrollHeight -
 chat.scrollTop <=
 chat.clientHeight + 150;
 
-chat.innerHTML = html;
+if(chat.innerHTML !== html){
 
-if(nearBottom){
+    chat.innerHTML = html;
 
-chat.scrollTop =
-chat.scrollHeight;
-
+    chat.scrollTop =
+        chat.scrollHeight;
 }
 
 });
@@ -407,66 +413,52 @@ loadMessages,
 2000
 );
 
-</script>
-
-{% endif %}
-
 <script>
 
-function refreshAdminMessages() {
+function refreshSidebar(){
 
     fetch(
-        `/support/admin/get-messages/?user={{ selected_user.id }}`
+        "/support/admin-unread/"
     )
 
-    .then(response => response.json())
+    .then(res => res.json())
 
     .then(data => {
 
-        let chat =
-            document.getElementById("chat-box");
+        data.forEach(item => {
 
-        let html = "";
+            let badge =
+                document.querySelector(
+                    `.badge[data-user="${item.id}"]`
+                );
 
-        data.forEach(msg => {
+            if(!badge) return;
 
-            html += `
-                <div>
-                    <b>${msg.sender}</b><br>
+            if(item.unread > 0){
 
-                    ${msg.message}
+                badge.style.display =
+                    "inline";
 
-                    ${msg.image ?
-                    `<img src="${msg.image}" width="150">`
-                    : ""}
+                badge.innerText =
+                    item.unread;
 
-                    ${msg.voice ?
-                    `<audio controls src="${msg.voice}"></audio>`
-                    : ""}
+            }else{
 
-                    <small>${msg.time}</small>
-                </div>
-            `;
+                badge.style.display =
+                    "none";
+            }
 
         });
-
-        if(chat.innerHTML !== html){
-
-            chat.innerHTML = html;
-
-            chat.scrollTop =
-                chat.scrollHeight;
-        }
 
     });
 
 }
 
-refreshAdminMessages();
+refreshSidebar();
 
 setInterval(
-    refreshAdminMessages,
-    30000
+    refreshSidebar,
+    1000
 );
 
 </script>

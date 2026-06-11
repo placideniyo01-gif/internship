@@ -58,16 +58,19 @@
             <button class="withdraw">Withdraw</button>
         </a>
 
-        <a href="/support/" class="support-btn" style="
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 999;
-        ">
+        <a href="/support/"
+        class="support-btn"
+        style="
+        position:fixed;
+        top:20px;
+        right:20px;
+        z-index:999;">
+
             Support
 
-            {% if unread_support > 0 %}
-            <span class="badge" style="
+            <span id="supportBadge"
+                style="
+                display:{% if unread_support > 0 %}inline{% else %}none{% endif %};
                 position:absolute;
                 top:-8px;
                 right:-8px;
@@ -76,11 +79,12 @@
                 border-radius:50%;
                 padding:4px 7px;
                 font-size:12px;
-                font-weight:bold;
-            ">
+                font-weight:bold;">
+
                 {{ unread_support }}
+
             </span>
-            {% endif %}
+
         </a>
 
     </div>
@@ -316,6 +320,48 @@ function updateDashboard() {
 updateDashboard();
 
 setInterval(updateDashboard, 30000);
+</script>
+
+<script>
+
+function refreshSupportBadge(){
+
+    fetch("/dashboard/unread-support/")
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        let badge =
+            document.getElementById(
+                "supportBadge"
+            );
+
+        if(data.count > 0){
+
+            badge.style.display =
+                "inline";
+
+            badge.innerText =
+                data.count;
+
+        }else{
+
+            badge.style.display =
+                "none";
+        }
+
+    });
+
+}
+
+refreshSupportBadge();
+
+setInterval(
+    refreshSupportBadge,
+    30000
+);
+
 </script>
 
 </body>
