@@ -3,8 +3,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
 
 <title>Transaction History</title>
 
@@ -52,24 +55,58 @@ body{
     margin-bottom:25px;
 }
 
-h1,h2{
+h1,
+h2{
     margin-bottom:20px;
+}
+
+.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+    gap:15px;
+}
+
+.btn{
+    background:#00d26a;
+    color:white;
+    padding:10px 20px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:600;
+}
+
+.btn:hover{
+    opacity:.9;
+}
+
+.table-wrapper{
+    width:100%;
+    overflow-x:auto;
 }
 
 table{
     width:100%;
     border-collapse:collapse;
+    min-width:600px;
 }
 
 th{
     background:#111827;
     padding:15px;
     text-align:left;
+    white-space:nowrap;
 }
 
 td{
     padding:15px;
     border-bottom:1px solid rgba(255,255,255,.1);
+}
+
+.wallet-address{
+    max-width:180px;
+    word-break:break-all;
 }
 
 .pending{
@@ -87,21 +124,6 @@ td{
     font-weight:bold;
 }
 
-.top{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:20px;
-}
-
-.btn{
-    background:#00d26a;
-    color:white;
-    padding:10px 20px;
-    border-radius:10px;
-    text-decoration:none;
-}
-
 .empty{
     text-align:center;
     padding:40px;
@@ -111,9 +133,54 @@ td{
     margin-bottom:20px;
 }
 
+/* Mobile */
+
+@media(max-width:768px){
+
+    body{
+        padding:15px;
+    }
+
+    .card{
+        padding:20px;
+    }
+
+    .top{
+        flex-direction:row;
+        align-items:center;
+    }
+
+    h1,
+    h2{
+        font-size:18px;
+    }
+
+    .btn{
+        padding:8px 15px;
+        font-size:14px;
+    }
+
+    table{
+        min-width:500px;
+    }
+
+    th,
+    td{
+        padding:12px 10px;
+        font-size:14px;
+    }
+
+    .wallet-address{
+        max-width:120px;
+        font-size:13px;
+    }
+
+}
+
 </style>
 
 </head>
+
 <body>
 
 <div class="container">
@@ -126,59 +193,90 @@ td{
 
             <h1>Deposit History</h1>
 
-            <a href="{% url 'deposit' %}" class="btn">
+            <a href="{% url 'deposit' %}"
+               class="btn">
+
                 New Deposit
+
             </a>
 
         </div>
 
         {% if deposits %}
 
-        <table>
+        <div class="table-wrapper">
 
-            <tr>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Date</th>
-            </tr>
+            <table>
 
-            {% for deposit in deposits %}
+                <thead>
 
-            <tr>
+                    <tr>
 
-                <td>
-                    ${{ deposit.amount }}
-                </td>
+                        <th>Amount</th>
 
-                <td>
+                        <th>Status</th>
 
-                    {% if deposit.status == "Approved" %}
-                        <span class="approved">
-                            Approved
-                        </span>
+                        <th>Date</th>
 
-                    {% elif deposit.status == "Rejected" %}
-                        <span class="rejected">
-                            Rejected
-                        </span>
+                    </tr>
 
-                    {% else %}
-                        <span class="pending">
-                            Pending
-                        </span>
-                    {% endif %}
+                </thead>
 
-                </td>
+                <tbody>
 
-                <td>
-                    {{ deposit.created_at|date:"d M Y H:i" }}
-                </td>
+                    {% for deposit in deposits %}
 
-            </tr>
+                    <tr>
 
-            {% endfor %}
+                        <td>
+                            ${{ deposit.amount }}
+                        </td>
 
-        </table>
+                        <td>
+
+                            {% if deposit.status == "Approved" %}
+
+                                <span class="approved">
+
+                                    Approved
+
+                                </span>
+
+                            {% elif deposit.status == "Rejected" %}
+
+                                <span class="rejected">
+
+                                    Rejected
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="pending">
+
+                                    Pending
+
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {{ deposit.created_at|date:"d M Y H:i" }}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
 
         {% else %}
 
@@ -187,7 +285,9 @@ td{
             <h3>No Deposits Yet</h3>
 
             <p>
+
                 Your deposit history will appear here.
+
             </p>
 
         </div>
@@ -196,66 +296,102 @@ td{
 
     </div>
 
+
     <!-- WITHDRAWAL HISTORY -->
 
     <div class="card">
 
         <h2 class="section-title">
+
             Withdrawal History
+
         </h2>
 
         {% if withdrawals %}
 
-        <table>
+        <div class="table-wrapper">
 
-            <tr>
-                <th>Amount</th>
-                <th>Wallet Address</th>
-                <th>Status</th>
-                <th>Date</th>
-            </tr>
+            <table>
 
-            {% for withdrawal in withdrawals %}
+                <thead>
 
-            <tr>
+                    <tr>
 
-                <td>
-                    ${{ withdrawal.amount }}
-                </td>
+                        <th>Amount</th>
 
-                <td>
-                    {{ withdrawal.wallet_address }}
-                </td>
+                        <th>Wallet Address</th>
 
-                <td>
+                        <th>Status</th>
 
-                    {% if withdrawal.status == "Approved" %}
-                        <span class="approved">
-                            Approved
-                        </span>
+                        <th>Date</th>
 
-                    {% elif withdrawal.status == "Rejected" %}
-                        <span class="rejected">
-                            Rejected
-                        </span>
+                    </tr>
 
-                    {% else %}
-                        <span class="pending">
-                            Pending
-                        </span>
-                    {% endif %}
+                </thead>
 
-                </td>
+                <tbody>
 
-                <td>
-                    {{ withdrawal.created_at|date:"d M Y H:i" }}
-                </td>
+                    {% for withdrawal in withdrawals %}
 
-            </tr>
+                    <tr>
 
-            {% endfor %}
+                        <td>
 
-        </table>
+                            ${{ withdrawal.amount }}
+
+                        </td>
+
+                        <td class="wallet-address">
+
+                            {{ withdrawal.wallet_address }}
+
+                        </td>
+
+                        <td>
+
+                            {% if withdrawal.status == "Approved" %}
+
+                                <span class="approved">
+
+                                    Approved
+
+                                </span>
+
+                            {% elif withdrawal.status == "Rejected" %}
+
+                                <span class="rejected">
+
+                                    Rejected
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="pending">
+
+                                    Pending
+
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {{ withdrawal.created_at|date:"d M Y H:i" }}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
 
         {% else %}
 
@@ -264,7 +400,9 @@ td{
             <h3>No Withdrawals Yet</h3>
 
             <p>
+
                 Your withdrawal history will appear here.
+
             </p>
 
         </div>
