@@ -15,7 +15,7 @@ class AccountsConfig(AppConfig):
                 User.objects.create_superuser(
                     username="byke04",
                     email="placidebyke04@gmail.com",
-                    password="Placidebyke04@"
+                    password="Placideniyo01@"
                 )
                 print("SUPERUSER CREATED")
 
