@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -9,142 +10,151 @@
 <style>
 
 *{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Segoe UI,sans-serif;
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,sans-serif;
 }
 
 body{
-background:#0f172a;
-color:white;
-height:100vh;
-overflow:hidden;
+    background:#0f172a;
+    color:white;
+    height:100vh;
+    overflow:hidden;
 }
 
 .wrapper{
-display:flex;
-height:100vh;
+    display:flex;
+    height:100vh;
 }
 
 .sidebar{
-width:280px;
-background:#111827;
-overflow-y:auto;
-border-right:1px solid #1f2937;
+    width:280px;
+    background:#111827;
+    overflow-y:auto;
+    border-right:1px solid #1f2937;
 }
 
 .sidebar h2{
-padding:20px;
-font-size:22px;
+    padding:20px;
+    font-size:22px;
 }
 
 .user{
-border-bottom:1px solid #1f2937;
+    border-bottom:1px solid #1f2937;
 }
 
 .user a{
-display:block;
-padding:15px;
-color:white;
-text-decoration:none;
+    display:block;
+    padding:15px;
+    color:white;
+    text-decoration:none;
 }
 
 .user a:hover{
-background:#1f2937;
+    background:#1f2937;
 }
 
 .chat{
-flex:1;
-display:flex;
-flex-direction:column;
+    flex:1;
+    display:flex;
+    flex-direction:column;
 }
 
 .messages{
-flex:1;
-overflow-y:auto;
-padding:20px;
+    flex:1;
+    overflow-y:auto;
+    padding:20px;
 }
 
 .msg{
-max-width:70%;
-padding:12px;
-border-radius:15px;
-margin-bottom:15px;
-word-wrap:break-word;
+    max-width:70%;
+    padding:12px;
+    border-radius:15px;
+    margin-bottom:15px;
+    word-wrap:break-word;
 }
 
 .mine{
-background:#22c55e;
-margin-left:auto;
-color:white;
+    background:#22c55e;
+    margin-left:auto;
+    color:white;
 }
 
 .theirs{
-background:#334155;
-color:white;
+    background:#334155;
+    color:white;
 }
 
 .msg img{
-width:100%;
-max-width:300px;
-border-radius:10px;
-margin-top:10px;
+    width:100%;
+    max-width:300px;
+    border-radius:10px;
+    margin-top:10px;
 }
 
 .msg audio{
-width:100%;
-margin-top:10px;
+    width:100%;
+    margin-top:10px;
 }
 
 .time{
-font-size:12px;
-opacity:.7;
-margin-top:5px;
+    font-size:12px;
+    opacity:.7;
+    margin-top:5px;
 }
 
 .send{
-background:#111827;
-padding:15px;
-border-top:1px solid #1f2937;
+    background:#111827;
+    padding:15px;
+    border-top:1px solid #1f2937;
 }
 
 textarea{
-width:100%;
-height:80px;
-border:none;
-border-radius:10px;
-padding:10px;
-resize:none;
-margin-bottom:10px;
+    width:100%;
+    height:80px;
+    border:none;
+    border-radius:10px;
+    padding:10px;
+    resize:none;
+    margin-bottom:10px;
 }
 
 .files{
-display:flex;
-gap:10px;
-margin-bottom:10px;
+    display:flex;
+    gap:10px;
+    margin-bottom:10px;
 }
 
 button{
-background:#22c55e;
-border:none;
-color:white;
-padding:12px 25px;
-border-radius:10px;
-cursor:pointer;
+    background:#22c55e;
+    border:none;
+    color:white;
+    padding:12px 25px;
+    border-radius:10px;
+    cursor:pointer;
 }
 
 button:hover{
-opacity:.9;
+    opacity:.9;
 }
 
 .empty{
-display:flex;
-justify-content:center;
-align-items:center;
-height:100%;
-font-size:20px;
-opacity:.7;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100%;
+    font-size:20px;
+    opacity:.7;
+}
+
+.badge{
+    background:green;
+    color:white;
+    padding:4px 8px;
+    border-radius:50%;
+    font-size:12px;
+    margin-left:10px;
 }
 
 </style>
@@ -155,271 +165,135 @@ opacity:.7;
 
 <div class="wrapper">
 
-<div class="sidebar">
+    <div class="sidebar">
 
-<h2>Users</h2>
+        <h2>Users</h2>
 
-{% for item in user_data %}
+        {% for item in user_data %}
 
-<div class="user">
+        <div class="user">
 
-<a href="?user={{ item.user.id }}">
+            <a href="?user={{ item.user.id }}">
 
-{{ item.user.username }}
+                {{ item.user.username }}
 
-<span
-class="badge"
-data-user="{{ item.user.id }}"
-style="
-background:green;
-color:white;
-padding:4px 8px;
-border-radius:50%;
-font-size:12px;
-margin-left:10px;
+                <span
+                    class="badge"
+                    data-user="{{ item.user.id }}"
+                    {% if item.unread == 0 %}
+                    style="display:none;"
+                    {% endif %}
+                >
+                    {{ item.unread }}
+                </span>
 
-{% if item.unread == 0 %}
-display:none;
-{% endif %}
-">
+            </a>
 
-{{ item.unread }}
+        </div>
 
-</span>
+        {% endfor %}
 
-</a>
+    </div>
 
-</div>
+    <div class="chat">
 
-{% endfor %}
+        {% if selected_user %}
 
-</div>
+        <div
+            class="messages"
+            id="chatBox"
+            data-user-id="{{ selected_user.id }}"
+        >
 
-<div class="chat">
+            {% for msg in messages %}
 
-{% if selected_user %}
+            <div class="msg {% if msg.sender.is_staff %}mine{% else %}theirs{% endif %}">
 
-<div
-class="messages"
-id="chatBox"
-data-user-id="{{ selected_user.id }}"
->
+                {% if msg.message %}
+                    <div>{{ msg.message }}</div>
+                {% endif %}
 
-{% for msg in messages %}
+                {% if msg.image %}
+                    <img src="{{ msg.image.url }}">
+                {% endif %}
 
-<div class="msg {% if msg.sender.is_staff %}mine{% else %}theirs{% endif %}">
+                {% if msg.voice %}
+                    <audio controls>
+                        <source src="{{ msg.voice.url }}">
+                    </audio>
+                {% endif %}
 
-{% if msg.message %}
-<div>{{ msg.message }}</div>
-{% endif %}
+                <div class="time">
+                    {{ msg.created_at|date:"H:i" }}
+                </div>
 
-{% if msg.image %}
-<img src="{{ msg.image.url }}">
-{% endif %}
+            </div>
 
-{% if msg.voice %}
-<audio controls>
-<source src="{{ msg.voice.url }}">
-</audio>
-{% endif %}
+            {% endfor %}
 
-<div class="time">
-{{ msg.created_at|date:"H:i" }}
-</div>
+        </div>
 
-</div>
+        <div class="send">
 
-{% endfor %}
+            <form
+                id="chatForm"
+                enctype="multipart/form-data"
+            >
 
-</div>
+                {% csrf_token %}
 
-<div class="send">
+                <input
+                    type="hidden"
+                    name="user_id"
+                    value="{{ selected_user.id }}"
+                >
 
-<form
-id="chatForm"
-enctype="multipart/form-data"
->
+                <textarea
+                    name="message"
+                    placeholder="Type reply..."
+                ></textarea>
 
-{% csrf_token %}
+                <div class="files">
 
-<input
-type="hidden"
-name="user_id"
-value="{{ selected_user.id }}"
->
+                    <input
+                        type="file"
+                        name="image"
+                        accept="image/*"
+                    >
 
-<textarea
-name="message"
-placeholder="Type reply..."
-></textarea>
+                    <input
+                        type="file"
+                        name="voice"
+                        accept="audio/*"
+                    >
 
-<div class="files">
+                </div>
 
-<input
-type="file"
-name="image"
-accept="image/*"
->
+                <button type="submit">
+                    Send
+                </button>
 
-<input
-type="file"
-name="voice"
-accept="audio/*"
->
+            </form>
 
-</div>
+        </div>
 
-<button type="submit">
-Send
-</button>
+        {% else %}
 
-</form>
+        <div class="empty">
+            Select a user to start chatting
+        </div>
 
-</div>
+        {% endif %}
 
-{% else %}
-
-<div class="empty">
-Select a user to start chatting
-</div>
-
-{% endif %}
+    </div>
 
 </div>
-
-</div>
-
-{% if selected_user %}
-
-<script>
-
-const chat =
-document.getElementById("chatBox");
-
-const form =
-document.getElementById("chatForm");
-
-const userId =
-chat.dataset.userId;
-
-chat.scrollTop =
-chat.scrollHeight;
-
-function loadMessages(){
-
-fetch(
-`/support/admin-messages/?user=${userId}`
-)
-.then(res => res.json())
-.then(data => {
-
-let html = "";
-
-data.forEach(msg => {
-
-const cls =
-msg.is_admin
-? "mine"
-: "theirs";
-
-html += `
-<div class="msg ${cls}">
-
-${msg.message
-? `<div>${msg.message}</div>`
-: ""
-}
-
-${msg.image
-? `<img src="${msg.image}">`
-: ""
-}
-
-${msg.voice
-? `
-<audio controls>
-<source src="${msg.voice}">
-</audio>
-`
-: ""
-}
-
-<div class="time">
-${msg.time}
-</div>
-
-</div>
-`;
-
-});
-
-const nearBottom =
-chat.scrollHeight -
-chat.scrollTop <=
-chat.clientHeight + 150;
-
-if(chat.innerHTML !== html){
-
-    chat.innerHTML = html;
-
-    chat.scrollTop =
-        chat.scrollHeight;
-}
-
-});
-
-}
-
-form.addEventListener(
-"submit",
-function(e){
-
-e.preventDefault();
-
-const formData =
-new FormData(form);
-
-fetch(
-"/support/admin-send/",
-{
-method:"POST",
-body:formData
-}
-)
-.then(res => res.json())
-.then(data => {
-
-if(data.success){
-
-form.reset();
-
-loadMessages();
-
-setTimeout(() => {
-
-chat.scrollTop =
-chat.scrollHeight;
-
-},200);
-
-}
-
-});
-
-});
-
-setInterval(
-loadMessages,
-30000
-);
 
 <script>
 
 function refreshSidebar(){
 
-    fetch(
-        "/support/admin-unread/"
-    )
+    fetch("/support/admin-unread/")
 
     .then(res => res.json())
 
@@ -427,25 +301,21 @@ function refreshSidebar(){
 
         data.forEach(item => {
 
-            let badge =
-                document.querySelector(
-                    `.badge[data-user="${item.id}"]`
-                );
+            const badge = document.querySelector(
+                `.badge[data-user="${item.id}"]`
+            );
 
             if(!badge) return;
 
             if(item.unread > 0){
 
-                badge.style.display =
-                    "inline";
-
-                badge.innerText =
-                    item.unread;
+                badge.style.display = "inline-block";
+                badge.innerText = item.unread;
 
             }else{
 
-                badge.style.display =
-                    "none";
+                badge.style.display = "none";
+
             }
 
         });
@@ -458,7 +328,147 @@ refreshSidebar();
 
 setInterval(
     refreshSidebar,
-    30000
+    1000
+);
+
+</script>
+
+{% if selected_user %}
+
+<script>
+
+const chat =
+    document.getElementById("chatBox");
+
+const form =
+    document.getElementById("chatForm");
+
+const userId =
+    chat.dataset.userId;
+
+chat.scrollTop =
+    chat.scrollHeight;
+
+
+function loadMessages(){
+
+    fetch(
+        `/support/admin-messages/?user=${userId}`
+    )
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        let html = "";
+
+        data.forEach(msg => {
+
+            const cls =
+                msg.is_admin
+                ? "mine"
+                : "theirs";
+
+            html += `
+                <div class="msg ${cls}">
+
+                    ${msg.message
+                        ? `<div>${msg.message}</div>`
+                        : ""
+                    }
+
+                    ${msg.image
+                        ? `<img src="${msg.image}">`
+                        : ""
+                    }
+
+                    ${msg.voice
+                        ? `
+                        <audio controls>
+                            <source src="${msg.voice}">
+                        </audio>
+                        `
+                        : ""
+                    }
+
+                    <div class="time">
+                        ${msg.time}
+                    </div>
+
+                </div>
+            `;
+
+        });
+
+        if(chat.innerHTML !== html){
+
+            const nearBottom =
+                chat.scrollHeight -
+                chat.scrollTop <=
+                chat.clientHeight + 150;
+
+            chat.innerHTML = html;
+
+            if(nearBottom){
+
+                chat.scrollTop =
+                    chat.scrollHeight;
+
+            }
+
+        }
+
+    });
+
+}
+
+
+form.addEventListener(
+    "submit",
+    function(e){
+
+        e.preventDefault();
+
+        const formData =
+            new FormData(form);
+
+        fetch(
+            "/support/admin-send/",
+            {
+                method:"POST",
+                body:formData
+            }
+        )
+
+        .then(res => res.json())
+
+        .then(data => {
+
+            if(data.success){
+
+                form.reset();
+
+                loadMessages();
+
+                setTimeout(() => {
+
+                    chat.scrollTop =
+                        chat.scrollHeight;
+
+                }, 200);
+
+            }
+
+        });
+
+    }
+);
+
+loadMessages();
+
+setInterval(
+    loadMessages,
+    1000
 );
 
 </script>
@@ -467,3 +477,4 @@ setInterval(
 
 </body>
 </html>
+```
