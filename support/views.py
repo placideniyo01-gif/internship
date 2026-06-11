@@ -283,16 +283,6 @@ def admin_chat_list(request):
         }
     )
 
-Nta kibazo, reka tugende buhoro buhoro. Iki gice cyose kijya muri support app, si muri dashboard.
-
-1. Shyira view muri support/views.py
-
-Fungura:
-
-support/views.py
-
-Hasi cyane (cyangwa ahandi hose muri iyo file) wongereho:
-
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
