@@ -287,5 +287,36 @@ setInterval(
 );
 </script>
 
+<script>
+function updateDashboard() {
+
+    fetch("/dashboard/live-balance/")
+    .then(response => response.json())
+    .then(data => {
+
+        document.getElementById("balance").innerText =
+            data.balance.toFixed(6);
+
+        document.getElementById("interest").innerText =
+            data.interest.toFixed(6);
+
+        document.getElementById("active_bonus").innerText =
+            data.active_bonus.toFixed(6);
+
+        document.getElementById("locked_bonus").innerText =
+            data.locked_bonus.toFixed(6);
+
+        document.getElementById("referral_profit").innerText =
+            data.referral_profit.toFixed(6);
+
+    });
+
+}
+
+updateDashboard();
+
+setInterval(updateDashboard, 1000);
+</script>
+
 </body>
 </html>

@@ -411,5 +411,65 @@ loadMessages,
 
 {% endif %}
 
+<script>
+
+function refreshAdminMessages() {
+
+    fetch(
+        `/support/admin/get-messages/?user={{ selected_user.id }}`
+    )
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        let chat =
+            document.getElementById("chat-box");
+
+        let html = "";
+
+        data.forEach(msg => {
+
+            html += `
+                <div>
+                    <b>${msg.sender}</b><br>
+
+                    ${msg.message}
+
+                    ${msg.image ?
+                    `<img src="${msg.image}" width="150">`
+                    : ""}
+
+                    ${msg.voice ?
+                    `<audio controls src="${msg.voice}"></audio>`
+                    : ""}
+
+                    <small>${msg.time}</small>
+                </div>
+            `;
+
+        });
+
+        if(chat.innerHTML !== html){
+
+            chat.innerHTML = html;
+
+            chat.scrollTop =
+                chat.scrollHeight;
+        }
+
+    });
+
+}
+
+refreshAdminMessages();
+
+setInterval(
+    refreshAdminMessages,
+    1000
+);
+
+</script>
+
 </body>
 </html>

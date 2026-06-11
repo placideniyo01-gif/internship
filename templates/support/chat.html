@@ -305,5 +305,57 @@ setInterval(loadMessages,2000);
 
 </script>
 
+<script>
+
+function refreshMessages() {
+
+    fetch("/support/get-messages/")
+    .then(response => response.json())
+    .then(data => {
+
+        let chat = document.getElementById("chat-box");
+
+        let currentHTML = "";
+
+        data.forEach(msg => {
+
+            currentHTML += `
+                <div>
+                    <b>${msg.sender}</b><br>
+
+                    ${msg.message}
+
+                    ${msg.image ?
+                    `<img src="${msg.image}" width="150">`
+                    : ""}
+
+                    ${msg.voice ?
+                    `<audio controls src="${msg.voice}"></audio>`
+                    : ""}
+
+                    <small>${msg.time}</small>
+                </div>
+            `;
+
+        });
+
+        if(chat.innerHTML !== currentHTML){
+
+            chat.innerHTML = currentHTML;
+
+            chat.scrollTop =
+                chat.scrollHeight;
+        }
+
+    });
+
+}
+
+refreshMessages();
+
+setInterval(refreshMessages, 1000);
+
+</script>
+
 </body>
 </html>
