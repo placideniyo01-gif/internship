@@ -121,7 +121,14 @@
 
         <input type="text" id="refLink" value="{{ referral_link }}" readonly>
 
-        <button class="copy-btn" onclick="copyLink()">Copy Referral Link</button>
+        <button
+        type="button"
+        class="copy-btn"
+        onclick="copyLink()">
+
+            Copy Referral Link
+
+        </button>
 
         <!-- STATS -->
         <div class="stats-grid">
@@ -225,13 +232,55 @@
 <!-- SCRIPTS -->
 
 <script>
+
 function copyLink() {
-    let copyText = document.getElementById("refLink");
-    copyText.select();
-    copyText.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(copyText.value);
-    alert("Referral link copied successfully!");
+
+    const link =
+        document.getElementById(
+            "refLink"
+        ).value;
+
+    if (navigator.share) {
+
+        navigator.share({
+
+            title:
+                "Internship Saving",
+
+            text:
+                "Join Internship Saving using my referral link",
+
+            url:
+                link
+
+        });
+
+    } else {
+
+        navigator.clipboard
+        .writeText(link)
+
+        .then(() => {
+
+            alert(
+                "Referral link copied successfully!"
+            );
+
+        })
+
+        .catch(() => {
+
+            prompt(
+                "Copy this referral link:",
+                link
+            );
+
+        });
+
+    }
+
 }
+
 </script>
 
 <script>

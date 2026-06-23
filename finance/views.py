@@ -17,11 +17,11 @@ def deposit(request):
             request.POST.get("amount")
         )
 
-        if amount < 10:
+        if amount < 5:
 
             messages.error(
                 request,
-                "Minimum deposit is 10 USDT."
+                "Minimum deposit is 5 USDT."
             )
 
             return redirect(
@@ -140,11 +140,11 @@ def withdraw(request):
 
             if active_referrals < 2:
 
-                if amount < Decimal("100"):
+                if amount < Decimal("20"):
 
                     form.add_error(
                         "amount",
-                        "Minimum withdrawal is 100 USDT."
+                        "Minimum withdrawal is 20 USDT."
                     )
 
                     return render(
