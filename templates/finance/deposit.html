@@ -33,6 +33,12 @@ body{
     margin-bottom:20px;
 }
 
+.wallet-address{
+    word-break:break-all;
+    margin-bottom:15px;
+    line-height:1.6;
+}
+
 .wallet-box{
     background:#111827;
     color:white;
@@ -41,20 +47,16 @@ body{
     margin-bottom:20px;
 }
 
-.wallet-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
 .copy-btn{
+    width:100%;
     border:none;
     background:#10b981;
     color:white;
-    padding:6px 12px;
-    border-radius:6px;
+    padding:12px;
+    border-radius:10px;
     cursor:pointer;
-    font-size:12px;
+    font-size:14px;
+    font-weight:bold;
 }
 
 .notification{
@@ -102,18 +104,23 @@ button.submit{
 
     <div class="wallet-box">
 
-        <div class="wallet-row">
+        <div class="wallet-box">
 
-            <span id="wallet">
-                TCstv6LGK2oMF5MFvqpaA8Ypyi1b1CrGqh
-            </span>
+            <div class="wallet-address">
+
+                <span id="wallet">
+                    TCstv6LGK2oMF5MFvqpaA8Ypyi1b1CrGqh
+                </span>
+
+            </div>
 
             <button
                 type="button"
                 class="copy-btn"
-                onclick="copyWallet()"
-            >
-                Copy
+                onclick="copyWallet()">
+
+                Copy Wallet Address
+
             </button>
 
         </div>
