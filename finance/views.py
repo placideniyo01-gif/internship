@@ -209,38 +209,50 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from accounts.models import Profile
 import json
-
-API_SECRET_KEY = "CHANGE_THIS_TO_LONG_RANDOM_SECRET"
-
+from django.conf import settings
 
 @csrf_exempt
 def receive_wallet_transfer(request):
 
     if request.method != "POST":
+
         return JsonResponse(
             {
                 "success": False,
-                "message": "POST required"
+                "message": "POST request required."
             },
             status=405
         )
 
     try:
 
-        data = json.loads(request.body)
+        data = json.loads(
+            request.body
+        )
 
-        if data.get("secret_key") != API_SECRET_KEY:
+        if (
+            data.get("secret_key")
+            !=
+            settings.API_TRANSFER_SECRET
+        ):
 
             return JsonResponse(
                 {
                     "success": False,
-                    "message": "Unauthorized"
+                    "message": "Unauthorized."
                 },
                 status=401
             )
 
-        username = data.get("username")
-        amount = Decimal(str(data.get("amount")))
+        username = data.get(
+            "username"
+        )
+
+        amount = Decimal(
+            str(
+                data.get("amount")
+            )
+        )
 
         user = User.objects.filter(
             username=username
@@ -251,7 +263,7 @@ def receive_wallet_transfer(request):
             return JsonResponse(
                 {
                     "success": False,
-                    "message": "Username not found"
+                    "message": "Username not found."
                 },
                 status=404
             )
@@ -261,12 +273,13 @@ def receive_wallet_transfer(request):
         )
 
         profile.balance += amount
+
         profile.save()
 
         return JsonResponse(
             {
                 "success": True,
-                "message": "Transfer completed"
+                "message": "Transfer completed."
             }
         )
 

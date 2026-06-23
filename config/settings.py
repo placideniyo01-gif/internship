@@ -167,3 +167,7 @@ cloudinary.config(
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+
+API_TRANSFER_SECRET = os.environ.get(
+    "API_TRANSFER_SECRET"
+)
