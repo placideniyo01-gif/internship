@@ -43,4 +43,10 @@ urlpatterns = [
         name="unread_support_count"
     ),
 
+    path(
+        "api/check-username/",
+        views.check_username_api,
+        name="check_username_api"
+    ),
+
 ]

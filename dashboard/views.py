@@ -15,7 +15,10 @@ from accounts.models import (
     Referral,
     ReferralDeposit
 )
-
+from django.views.decorators.http import require_POST
+from django.contrib.auth.models import User
+import json
+from django.conf import settings
 
 @login_required
 def dashboard(request):
@@ -590,4 +593,61 @@ def unread_support_count(request):
 
     return JsonResponse({
         "count": count
+    })
+
+@require_POST
+def check_username_api(request):
+
+    try:
+
+        data = json.loads(
+            request.body
+        )
+
+    except Exception:
+
+        return JsonResponse({
+
+            "success": False,
+
+            "message": "Invalid request."
+
+        }, status=400)
+
+    if data.get("secret_key") != settings.USDT_API_SECRET:
+
+        return JsonResponse({
+
+            "success": False,
+
+            "message": "Unauthorized."
+
+        }, status=403)
+
+    username = data.get(
+        "username"
+    )
+
+    user = User.objects.filter(
+        username=username
+    ).first()
+
+    if not user:
+
+        return JsonResponse({
+
+            "success": False,
+
+            "message": "Username not found."
+
+        })
+
+    return JsonResponse({
+
+        "success": True,
+
+        "username": user.username,
+
+        "names": user.get_full_name() or user.username
+
     })

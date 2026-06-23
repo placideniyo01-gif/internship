@@ -171,3 +171,4 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 API_TRANSFER_SECRET = os.environ.get(
     "API_TRANSFER_SECRET"
 )
+USDT_API_SECRET = "9xH72QaLpV81YtZ4FkN3RmA5WsC6BdP8"
