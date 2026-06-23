@@ -202,3 +202,80 @@ def withdraw(request):
             "balance": profile.balance
         }
     )
+
+from decimal import Decimal
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
+from accounts.models import Profile
+import json
+
+API_SECRET_KEY = "CHANGE_THIS_TO_LONG_RANDOM_SECRET"
+
+
+@csrf_exempt
+def receive_wallet_transfer(request):
+
+    if request.method != "POST":
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "POST required"
+            },
+            status=405
+        )
+
+    try:
+
+        data = json.loads(request.body)
+
+        if data.get("secret_key") != API_SECRET_KEY:
+
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Unauthorized"
+                },
+                status=401
+            )
+
+        username = data.get("username")
+        amount = Decimal(str(data.get("amount")))
+
+        user = User.objects.filter(
+            username=username
+        ).first()
+
+        if not user:
+
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Username not found"
+                },
+                status=404
+            )
+
+        profile = Profile.objects.get(
+            user=user
+        )
+
+        profile.balance += amount
+        profile.save()
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Transfer completed"
+            }
+        )
+
+    except Exception as e:
+
+        return JsonResponse(
+            {
+                "success": False,
+                "message": str(e)
+            },
+            status=400
+        )

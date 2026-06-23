@@ -21,4 +21,10 @@ urlpatterns = [
         name="withdraw"
     ),
 
+    path(
+        "api/receive-wallet-transfer/",
+        views.receive_wallet_transfer,
+        name="receive_wallet_transfer"
+    ),
+
 ]
