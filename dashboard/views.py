@@ -595,7 +595,9 @@ def unread_support_count(request):
         "count": count
     })
 
-@require_POST
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
 def check_username_api(request):
 
     try:
