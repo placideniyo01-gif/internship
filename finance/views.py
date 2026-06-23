@@ -4,7 +4,7 @@ from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
 from .models import Deposit
-from .models import Transaction
+from transactions.models import Transaction
 from django.contrib import messages
 
 
