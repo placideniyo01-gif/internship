@@ -4,7 +4,7 @@ from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
 from .models import Deposit
-
+from .models import Transaction
 from django.contrib import messages
 
 
@@ -52,7 +52,7 @@ def deposit(request):
         "finance/deposit.html"
     )
 
-from .models import Deposit, Withdrawal
+from .models import Deposit, Withdrawal, InternshipTransfer
 
 @login_required
 def deposit_history(request):
@@ -65,12 +65,18 @@ def deposit_history(request):
         user=request.user
     ).order_by("-created_at")
 
+    internships = Transaction.objects.filter(
+        user=request.user,
+        transaction_type="INTERNSHIP"
+    ).order_by("-created_at")
+
     return render(
         request,
         "finance/deposit_history.html",
         {
             "deposits": deposits,
             "withdrawals": withdrawals,
+            "internships": internships,
         }
     )
 

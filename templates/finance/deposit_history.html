@@ -412,6 +412,74 @@ td{
 
     </div>
 
+    <div class="card">
+
+        <h2 class="section-title">
+            Internship Transfer History
+        </h2>
+
+        {% if internships %}
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for transfer in internships %}
+
+                    <tr>
+
+                        <td>
+                            {{ transfer.receiver_wallet }}
+                        </td>
+
+                        <td>
+                            ${{ transfer.amount }}
+                        </td>
+
+                        <td>
+
+                            <span class="approved">
+                                {{ transfer.status }}
+                            </span>
+
+                        </td>
+
+                        <td>
+                            {{ transfer.created_at|date:"d M Y H:i" }}
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+            <div class="empty">
+
+                <h3>No Internship Transfers Yet</h3>
+
+            </div>
+
+        {% endif %}
+
+    </div>
 </div>
 
 </body>
