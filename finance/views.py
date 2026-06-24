@@ -80,13 +80,15 @@ def deposit_history(request):
         ).order_by("-created_at")
 
         import logging
-
         logger = logging.getLogger(__name__)
 
         logger.error(
-            f"TOTAL INTERNSHIP TRANSFERS: {InternshipTransfer.objects.count()}"
+            f"CURRENT USER: {request.user.username}"
         )
 
+        logger.error(
+            f"USER TRANSFERS: {InternshipTransfer.objects.filter(user=request.user).count()}"
+        )
         return render(
             request,
             "finance/deposit_history.html",
