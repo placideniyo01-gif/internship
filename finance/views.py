@@ -241,6 +241,7 @@ from django.contrib.auth.models import User
 from accounts.models import Profile
 import json
 from django.conf import settings
+from finance.models import InternshipTransfer
 
 @csrf_exempt
 def receive_wallet_transfer(request):
@@ -306,6 +307,13 @@ def receive_wallet_transfer(request):
         profile.balance += amount
 
         profile.save()
+
+        InternshipTransfer.objects.create(
+            user=user,
+            receiver_username=user.username,
+            amount=amount,
+            status="SUCCESS"
+        )
 
         return JsonResponse(
             {
