@@ -4,7 +4,7 @@ from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
 from .models import Deposit
-
+from django.http import HttpResponse
 from django.contrib import messages
 
 
@@ -58,30 +58,42 @@ from .models import (
     InternshipTransfer
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 @login_required
 def deposit_history(request):
 
-    deposits = Deposit.objects.filter(
-        user=request.user
-    ).order_by("-created_at")
+    try:
 
-    withdrawals = Withdrawal.objects.filter(
-        user=request.user
-    ).order_by("-created_at")
+        deposits = Deposit.objects.filter(
+            user=request.user
+        ).order_by("-created_at")
 
-    internship_transfers = InternshipTransfer.objects.filter(
-        user=request.user
-    ).order_by("-created_at")
+        withdrawals = Withdrawal.objects.filter(
+            user=request.user
+        ).order_by("-created_at")
 
-    return render(
-        request,
-        "finance/deposit_history.html",
-        {
-            "deposits": deposits,
-            "withdrawals": withdrawals,
-            "internship_transfers": internship_transfers,
-        }
-    )
+        internship_transfers = InternshipTransfer.objects.filter(
+            user=request.user
+        ).order_by("-created_at")
+
+        return render(
+            request,
+            "finance/deposit_history.html",
+            {
+                "deposits": deposits,
+                "withdrawals": withdrawals,
+                "internship_transfers": internship_transfers,
+            }
+        )
+
+    except Exception as e:
+
+        logger.exception(e)
+
+        return HttpResponse(str(e))
 
 from decimal import Decimal
 from datetime import timedelta
