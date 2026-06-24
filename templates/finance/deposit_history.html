@@ -418,7 +418,7 @@ td{
             Internship Transfer History
         </h2>
 
-        {% if internships %}
+        {% if internship_transfers %}
 
         <div class="table-wrapper">
 
@@ -435,12 +435,12 @@ td{
 
                 <tbody>
 
-                    {% for transfer in internships %}
+                    {% for transfer in internship_transfers %}
 
                     <tr>
 
                         <td>
-                            {{ transfer.receiver_wallet }}
+                            {{ transfer.receiver_username }}
                         </td>
 
                         <td>
@@ -449,9 +449,19 @@ td{
 
                         <td>
 
-                            <span class="approved">
-                                {{ transfer.status }}
-                            </span>
+                            {% if transfer.status == "SUCCESS" %}
+                                <span class="approved">
+                                    Success
+                                </span>
+                            {% elif transfer.status == "FAILED" %}
+                                <span class="rejected">
+                                    Failed
+                                </span>
+                            {% else %}
+                                <span class="pending">
+                                    Pending
+                                </span>
+                            {% endif %}
 
                         </td>
 
@@ -472,9 +482,7 @@ td{
         {% else %}
 
             <div class="empty">
-
                 <h3>No Internship Transfers Yet</h3>
-
             </div>
 
         {% endif %}
