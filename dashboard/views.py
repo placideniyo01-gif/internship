@@ -34,14 +34,14 @@ def dashboard(request):
     now = timezone.now()
 
     # ======================
-    # NORMAL 4% INTEREST
+    # NORMAL 10% INTEREST
     # ======================
 
     seconds = (
         now - wallet.last_update
     ).total_seconds()
 
-    daily_rate = Decimal("0.04")
+    daily_rate = Decimal("0.1")
 
     interest_per_second = (
         profile.balance * daily_rate
@@ -277,7 +277,7 @@ def claim_interest(request):
         now - wallet.last_update
     ).total_seconds()
 
-    daily_rate = Decimal("0.04")
+    daily_rate = Decimal("0.1")
 
     interest_per_second = (
         profile.balance * daily_rate
@@ -325,7 +325,7 @@ def live_balance(request):
         now - wallet.last_update
     ).total_seconds()
 
-    daily_rate = Decimal("0.04")
+    daily_rate = Decimal("0.1")
 
     interest_per_second = (
         profile.balance * daily_rate
