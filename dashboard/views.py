@@ -4,6 +4,15 @@ from django.utils import timezone
 from django.http import JsonResponse
 from decimal import Decimal
 from accounts.models import EmailOTP
+from datetime import timedelta
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+
+from accounts.interest import (
+    settle_interest,
+    get_current_interest,
+    get_interest_per_second
+)
 from accounts.utils import send_otp_email  # niba ihari
 from accounts.utils import send_password_otp
 from django.contrib import messages
@@ -33,29 +42,32 @@ def dashboard(request):
 
     now = timezone.now()
 
-    # ======================
-    # NORMAL 10% INTEREST
-    # ======================
-
-    seconds = (
-        now - wallet.last_update
-    ).total_seconds()
-
-    daily_rate = Decimal("0.1")
-
-    interest_per_second = (
-        profile.balance * daily_rate
-    ) / Decimal("86400")
-
-    earned_interest = (
-        Decimal(str(seconds))
-        * interest_per_second
+    current_interest = get_current_interest(
+        profile,
+        wallet,
+        now
     )
 
-    current_interest = (
-        wallet.amount +
-        earned_interest
+    interest_per_second = get_interest_per_second(
+        profile,
+        wallet
     )
+
+    # Interest claim cooldown: 7 days
+    next_claim_at = None
+    can_claim_interest = True
+
+    if wallet.last_claim_at:
+
+        next_claim_at = (
+            wallet.last_claim_at + timedelta(days=7)
+        )
+
+        if now < next_claim_at:
+            can_claim_interest = False
+
+    if current_interest <= 0:
+        can_claim_interest = False
 
     # ======================
     # REFERRALS
@@ -74,13 +86,10 @@ def dashboard(request):
         ).first()
 
         if deposit:
-
             member.referral_bonus = (
                 deposit.bonus_rate * 100
             )
-
         else:
-
             member.referral_bonus = Decimal("0")
 
     active_bonus = Decimal("0")
@@ -94,16 +103,14 @@ def dashboard(request):
 
     for d in deposits:
 
-        hours = (
+        elapsed_seconds = (
             now - d.started_at
-        ).total_seconds() / 3600
+        ).total_seconds()
+
+        hours = elapsed_seconds / 3600
 
         days = Decimal(
-            str(
-                (
-                    now - d.started_at
-                ).total_seconds() / 86400
-            )
+            str(elapsed_seconds / 86400)
         )
 
         if days > 90:
@@ -125,9 +132,6 @@ def dashboard(request):
         if available_bonus < 0:
             available_bonus = Decimal("0")
 
-        # TEST MODE
-        # Locked -> Active after 1 hour
-
         if hours >= 1:
             active_bonus += available_bonus
         else:
@@ -148,44 +152,39 @@ def dashboard(request):
 
     context = {
 
-        "username":
-        request.user.username,
+        "username": request.user.username,
 
-        "balance":
-        round(profile.balance, 6),
+        "balance": round(profile.balance, 8),
 
-        "interest":
-        round(current_interest, 6),
+        "interest": round(current_interest, 8),
 
-        "interest_rate_per_second":
-        float(interest_per_second),
+        "interest_rate_per_second": float(
+            interest_per_second
+        ),
 
-        "referrals":
-        referrals_count,
+        "can_claim_interest": can_claim_interest,
 
-        "active_bonus":
-        round(active_bonus, 6),
+        "next_claim_at": next_claim_at,
 
-        "locked_bonus":
-        round(locked_bonus, 6),
+        "referrals": referrals_count,
 
-        "referral_profit":
-        round(referral_profit, 6),
+        "active_bonus": round(active_bonus, 6),
 
-        "daily_ref_bonus_percent":
-        round(total_bonus_rate, 2),
+        "locked_bonus": round(locked_bonus, 6),
 
-        "team":
-        referrals_qs,
+        "referral_profit": round(referral_profit, 6),
 
-        "referral_code":
-        profile.referral_code,
+        "daily_ref_bonus_percent": round(
+            total_bonus_rate, 2
+        ),
 
-        "referral_link":
-        referral_link,
+        "team": referrals_qs,
 
-        "unread_support":
-        unread_support
+        "referral_code": profile.referral_code,
+
+        "referral_link": referral_link,
+
+        "unread_support": unread_support
     }
 
     return render(
@@ -194,12 +193,12 @@ def dashboard(request):
         context
     )
 
-
 @login_required
 def claim_bonus(request):
 
-    profile = Profile.objects.get(
-        user=request.user
+    profile, wallet = settle_interest(
+        request.user,
+        timezone.now()
     )
 
     now = timezone.now()
@@ -261,51 +260,73 @@ def claim_bonus(request):
 
 
 @login_required
+@require_POST
 def claim_interest(request):
-
-    profile = Profile.objects.get(
-        user=request.user
-    )
-
-    wallet, created = InterestWallet.objects.get_or_create(
-        user=request.user
-    )
 
     now = timezone.now()
 
-    seconds = (
-        now - wallet.last_update
-    ).total_seconds()
-
-    daily_rate = Decimal("0.1")
-
-    interest_per_second = (
-        profile.balance * daily_rate
-    ) / Decimal("86400")
-
-    earned_interest = (
-        Decimal(str(seconds))
-        * interest_per_second
+    profile, wallet = settle_interest(
+        request.user,
+        now
     )
 
-    total_interest = (
-        wallet.amount +
-        earned_interest
-    )
+    # Check 7-day cooldown
+    if wallet.last_claim_at:
 
+        next_claim_at = (
+            wallet.last_claim_at + timedelta(days=7)
+        )
+
+        if now < next_claim_at:
+
+            messages.error(
+                request,
+                "You can claim interest only once every 7 days."
+            )
+
+            return redirect("dashboard")
+
+    total_interest = wallet.amount
+
+    if total_interest <= 0:
+
+        messages.error(
+            request,
+            "You do not have interest available to claim yet."
+        )
+
+        return redirect("dashboard")
+
+    # Add interest to the user's balance
     profile.balance += total_interest
-
     profile.total_earned += total_interest
 
-    profile.save()
+    profile.save(
+        update_fields=[
+            "balance",
+            "total_earned"
+        ]
+    )
 
+    # Reset accrued interest and start a new claim period
     wallet.amount = Decimal("0")
     wallet.last_update = now
-    wallet.save()
+    wallet.last_claim_at = now
 
-    return redirect(
-        "dashboard"
+    wallet.save(
+        update_fields=[
+            "amount",
+            "last_update",
+            "last_claim_at"
+        ]
     )
+
+    messages.success(
+        request,
+        "Interest claimed successfully. Your new balance is now earning interest."
+    )
+
+    return redirect("dashboard")
 
 
 @login_required
@@ -321,24 +342,10 @@ def live_balance(request):
 
     now = timezone.now()
 
-    seconds = (
-        now - wallet.last_update
-    ).total_seconds()
-
-    daily_rate = Decimal("0.1")
-
-    interest_per_second = (
-        profile.balance * daily_rate
-    ) / Decimal("86400")
-
-    earned_interest = (
-        Decimal(str(seconds))
-        * interest_per_second
-    )
-
-    current_interest = (
-        wallet.amount +
-        earned_interest
+    current_interest = get_current_interest(
+        profile,
+        wallet,
+        now
     )
 
     active_bonus = Decimal("0")
@@ -351,26 +358,26 @@ def live_balance(request):
 
     for d in deposits:
 
-        hours = (
+        elapsed_seconds = (
             now - d.started_at
-        ).total_seconds() / 3600
+        ).total_seconds()
 
         days = Decimal(
-            str(
-                (
-                    now - d.started_at
-                ).total_seconds() / 86400
-            )
+            str(elapsed_seconds / 86400)
         )
-
-        if days > 90:
-            continue
 
         total_bonus_generated = (
             d.deposit_amount *
             d.bonus_rate *
             days
         )
+
+        if days > 90:
+            total_bonus_generated = (
+                d.deposit_amount *
+                d.bonus_rate *
+                Decimal("90")
+            )
 
         referral_profit += total_bonus_generated
 
@@ -389,20 +396,15 @@ def live_balance(request):
 
     return JsonResponse({
 
-        "balance":
-        float(profile.balance),
+        "balance": float(profile.balance),
 
-        "interest":
-        float(current_interest),
+        "interest": float(current_interest),
 
-        "active_bonus":
-        float(active_bonus),
+        "active_bonus": float(active_bonus),
 
-        "locked_bonus":
-        float(locked_bonus),
+        "locked_bonus": float(locked_bonus),
 
-        "referral_profit":
-        float(referral_profit)
+        "referral_profit": float(referral_profit)
 
     })
 

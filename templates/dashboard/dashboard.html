@@ -1,3 +1,4 @@
+
 {% load static %}
 
 <!DOCTYPE html>
@@ -6,18 +7,17 @@
 <head>
     <meta charset="UTF-8">
     <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
     <title>Treasury Dashboard</title>
 
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    
-    <div class="header">
 
+    <div class="header">
         <a href="{% url 'settings' %}" class="settings-btn">
             ⚙️settings
         </a>
-
     </div>
 
 </head>
@@ -61,12 +61,12 @@
         </a>
 
         <a href="/support/"
-        class="support-btn"
-        style="
-        position:fixed;
-        top:20px;
-        right:20px;
-        z-index:999;">
+           class="support-btn"
+           style="
+           position:fixed;
+           top:20px;
+           right:20px;
+           z-index:999;">
 
             Support
 
@@ -95,7 +95,7 @@
     <div class="interest-card">
 
         <div>
-            <h4>10% Daily Interest</h4>
+            <h4>5% Daily Interest</h4>
 
             <p class="ref-bonus">
                 + {{ daily_ref_bonus_percent|default:"0" }}% Daily Referral Bonuses
@@ -106,9 +106,12 @@
             </h1>
         </div>
 
-        <a href="{% url 'claim_interest' %}">
-            <button class="claim">Claim</button>
-        </a>
+        <form method="POST" action="{% url 'claim_interest' %}">
+            {% csrf_token %}
+            <button type="submit" class="claim">
+                Claim
+            </button>
+        </form>
 
     </div>
 
@@ -124,9 +127,9 @@
         <input type="text" id="refLink" value="{{ referral_link }}" readonly>
 
         <button
-        type="button"
-        class="copy-btn"
-        onclick="copyLink()">
+            type="button"
+            class="copy-btn"
+            onclick="copyLink()">
 
             Copy Referral Link
 
@@ -231,30 +234,19 @@
 
 </div>
 
-<!-- SCRIPTS -->
-
+<!-- COPY REFERRAL LINK -->
 <script>
 
 function copyLink() {
 
-    const link =
-        document.getElementById(
-            "refLink"
-        ).value;
+    const link = document.getElementById("refLink").value;
 
     if (navigator.share) {
 
         navigator.share({
-
-            title:
-                "Internship Saving",
-
-            text:
-                "Join Internship Saving using my referral link",
-
-            url:
-                link
-
+            title: "Internship Saving",
+            text: "Join Internship Saving using my referral link",
+            url: link
         });
 
     } else {
@@ -263,20 +255,11 @@ function copyLink() {
         .writeText(link)
 
         .then(() => {
-
-            alert(
-                "Referral link copied successfully!"
-            );
-
+            alert("Referral link copied successfully!");
         })
 
         .catch(() => {
-
-            prompt(
-                "Copy this referral link:",
-                link
-            );
-
+            prompt("Copy this referral link:", link);
         });
 
     }
@@ -285,97 +268,91 @@ function copyLink() {
 
 </script>
 
-<script>
-let interest = parseFloat("{{ interest }}");
-let ratePerSecond = parseFloat("{{ interest_rate_per_second }}");
 
-setInterval(() => {
-    interest += ratePerSecond;
-    document.getElementById("interest").innerHTML =
+<!-- LIVE DASHBOARD AND INTEREST -->
+<script>
+
+let interest = parseFloat("{{ interest }}") || 0;
+
+let ratePerSecond =
+    parseFloat("{{ interest_rate_per_second }}") || 0;
+
+const interestElement = document.getElementById("interest");
+
+
+function displayInterest() {
+
+    interestElement.innerText =
         "$" + interest.toFixed(8);
+
+}
+
+
+// Count interest every second
+setInterval(() => {
+
+    interest += ratePerSecond;
+
+    displayInterest();
+
 }, 1000);
-</script>
 
-<script>
 
-async function updateBalance(){
+// Update dashboard from server
+async function updateDashboard() {
 
-    try{
+    try {
 
         const response = await fetch(
             "/dashboard/live-balance/"
         );
 
+        if (!response.ok) {
+            return;
+        }
+
         const data = await response.json();
 
-        document.getElementById(
-            "balance"
-        ).innerHTML =
-        "$" + data.balance.toFixed(8);
+        document.getElementById("balance").innerText =
+            "$" + data.balance.toFixed(8);
 
-        document.getElementById(
-            "active_bonus"
-        ).innerHTML =
-        "$" + data.active_bonus.toFixed(8);
+        interest = data.interest;
 
-        document.getElementById(
-            "locked_bonus"
-        ).innerHTML =
-        "$" + data.locked_bonus.toFixed(8);
+        // Update rate after deposit or balance change
+        ratePerSecond = data.interest_rate_per_second;
 
-        document.getElementById(
-            "referral_profit"
-        ).innerHTML =
-        "$" + data.referral_profit.toFixed(8);
+        displayInterest();
 
-    }catch(err){
+        document.getElementById("active_bonus").innerText =
+            "$" + data.active_bonus.toFixed(8);
 
-        console.log(err);
+        document.getElementById("locked_bonus").innerText =
+            "$" + data.locked_bonus.toFixed(8);
+
+        document.getElementById("referral_profit").innerText =
+            "$" + data.referral_profit.toFixed(8);
+
+    } catch (error) {
+
+        console.log("Dashboard update error:", error);
 
     }
 
 }
 
-setInterval(
-    updateBalance,
-    1000
-);
-</script>
 
-<script>
-function updateDashboard() {
-
-    fetch("/dashboard/live-balance/")
-    .then(response => response.json())
-    .then(data => {
-
-        document.getElementById("balance").innerText =
-            data.balance.toFixed(6);
-
-        document.getElementById("interest").innerText =
-            data.interest.toFixed(6);
-
-        document.getElementById("active_bonus").innerText =
-            data.active_bonus.toFixed(6);
-
-        document.getElementById("locked_bonus").innerText =
-            data.locked_bonus.toFixed(6);
-
-        document.getElementById("referral_profit").innerText =
-            data.referral_profit.toFixed(6);
-
-    });
-
-}
-
+// Update immediately and every 30 seconds
 updateDashboard();
 
 setInterval(updateDashboard, 30000);
+
 </script>
 
+
+<!-- SUPPORT NOTIFICATIONS -->
 <script>
 
-function refreshSupportBadge(){
+function refreshSupportBadge() {
 
     fetch("/dashboard/unread-support/")
 
@@ -383,35 +360,31 @@ function refreshSupportBadge(){
 
     .then(data => {
 
-        let badge =
-            document.getElementById(
-                "supportBadge"
-            );
+        let badge = document.getElementById("supportBadge");
 
-        if(data.count > 0){
+        if (data.count > 0) {
 
-            badge.style.display =
-                "inline";
+            badge.style.display = "inline";
 
-            badge.innerText =
-                data.count;
+            badge.innerText = data.count;
 
-        }else{
+        } else {
 
-            badge.style.display =
-                "none";
+            badge.style.display = "none";
+
         }
 
+    })
+
+    .catch(error => {
+        console.log("Support badge error:", error);
     });
 
 }
 
 refreshSupportBadge();
 
-setInterval(
-    refreshSupportBadge,
-    30000
-);
+setInterval(refreshSupportBadge, 30000);
 
 </script>
 

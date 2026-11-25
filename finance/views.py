@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.shortcuts import redirect
 
 from django.contrib.auth.decorators import login_required
-
+from accounts.interest import settle_interest
 from .models import Deposit
 from django.http import HttpResponse
 from django.contrib import messages
@@ -300,8 +300,9 @@ def receive_wallet_transfer(request):
                 status=404
             )
 
-        profile = Profile.objects.get(
-            user=user
+        profile, wallet = settle_interest(
+            user,
+            timezone.now()
         )
 
         profile.balance += amount

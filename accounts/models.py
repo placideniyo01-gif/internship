@@ -13,8 +13,8 @@ class Profile(models.Model):
     )
 
     balance = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+        max_digits=20,
+        decimal_places=8,
         default=0
     )
 
@@ -25,11 +25,10 @@ class Profile(models.Model):
     )
 
     total_earned = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+        max_digits=20,
+        decimal_places=8,
         default=0
     )
-
     referral_code = models.CharField(
         max_length=50,
         unique=True,
@@ -182,13 +181,26 @@ class InterestWallet(models.Model):
     )
 
     amount = models.DecimalField(
-        max_digits=15,
+        max_digits=20,
         decimal_places=8,
         default=0
     )
 
+    # Last time interest was calculated
     last_update = models.DateTimeField(
         default=timezone.now
+    )
+
+    # Interest starts after the first approved deposit
+    started_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    # Last successful interest claim
+    last_claim_at = models.DateTimeField(
+        null=True,
+        blank=True
     )
 
     def __str__(self):
