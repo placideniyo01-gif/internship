@@ -193,167 +193,179 @@ button:hover{
 
 <script>
 
-const chat =
-document.getElementById("chatBox");
 
-const form =
-document.getElementById("chatForm");
+const chat = document.getElementById("chatBox");
+const form = document.getElementById("chatForm");
+const sendButton = form.querySelector('button[type="submit"]');
+const messageInput = document.getElementById("messageInput");
 
-const currentUser =
-document.body.dataset.user;
+let sending = false;
+let loading = false;
+let refreshTimer = null;
+let lastMessageId = 0;
 
-chat.scrollTop =
-chat.scrollHeight;
+chat.scrollTop = chat.scrollHeight;
 
-function loadMessages(){
+function appendMessage(msg) {
+    const wrapper = document.createElement("div");
 
-    fetch("messages/")
-    .then(response => response.json())
-    .then(data => {
+    wrapper.className =
+        msg.sender === document.body.dataset.user
+            ? "msg mine"
+            : "msg theirs";
 
-        let html = "";
+    if (msg.message) {
+        const text = document.createElement("div");
+        text.textContent = msg.message;
+        wrapper.appendChild(text);
+    }
 
-        data.forEach(msg => {
+    if (msg.image) {
+        const img = document.createElement("img");
+        img.src = msg.image;
+        img.alt = "Attached image";
+        wrapper.appendChild(img);
+    }
 
-            const cls =
-            msg.sender === currentUser
-            ? "mine"
-            : "theirs";
+    if (msg.voice) {
+        const audio = document.createElement("audio");
+        audio.controls = true;
 
-            html += `
-            <div class="msg ${cls}">
+        const source = document.createElement("source");
+        source.src = msg.voice;
 
-                ${msg.message
-                    ? `<div>${msg.message}</div>`
-                    : ""
-                }
+        audio.appendChild(source);
+        wrapper.appendChild(audio);
+    }
 
-                ${msg.image
-                    ? `<img src="${msg.image}">`
-                    : ""
-                }
+    const time = document.createElement("div");
+    time.className = "time";
+    time.textContent = msg.time;
 
-                ${msg.voice
-                    ? `
-                    <audio controls>
-                        <source src="${msg.voice}">
-                    </audio>
-                    `
-                    : ""
-                }
+    wrapper.appendChild(time);
 
-                <div class="time">
-                    ${msg.time}
-                </div>
+    return wrapper;
+}
 
-            </div>
-            `;
+async function loadMessages() {
+    if (loading) return;
+
+    loading = true;
+
+    try {
+        const response = await fetch("messages/", {
+            cache: "no-store"
         });
 
-        const isNearBottom =
-            chat.scrollHeight -
-            chat.scrollTop <=
+        if (!response.ok) {
+            throw new Error("Could not load messages.");
+        }
+
+        const data = await response.json();
+
+        const nearBottom =
+            chat.scrollHeight - chat.scrollTop <=
             chat.clientHeight + 150;
 
-        chat.innerHTML = html;
+        let htmlChanged = false;
 
-        if(isNearBottom){
-            chat.scrollTop =
-            chat.scrollHeight;
+        if (data.length !== lastMessageId + 1 &&
+            data.length !== 0) {
+            // The server may return older messages too.
+            // Rebuild only when the number of messages changes.
+            htmlChanged = chat.dataset.messageCount !== String(data.length);
+        } else {
+            htmlChanged = chat.dataset.messageCount !== String(data.length);
         }
 
-    });
+        if (htmlChanged) {
+            const fragment = document.createDocumentFragment();
 
+            data.forEach(msg => {
+                fragment.appendChild(appendMessage(msg));
+            });
+
+            chat.replaceChildren(fragment);
+            chat.dataset.messageCount = String(data.length);
+        }
+
+        if (data.length) {
+            lastMessageId = data[data.length - 1].id;
+        }
+
+        if (nearBottom) {
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+    } catch (error) {
+        console.error("Chat refresh error:", error);
+    } finally {
+        loading = false;
+    }
 }
 
-form.addEventListener(
-"submit",
-function(e){
+async function sendMessage(event) {
+    event.preventDefault();
 
-    e.preventDefault();
+    if (sending) return;
 
-    const formData =
-    new FormData(form);
+    const formData = new FormData(form);
+    const message = (formData.get("message") || "").trim();
+    const image = formData.get("image");
+    const voice = formData.get("voice");
 
-    fetch("send/",{
-        method:"POST",
-        body:formData
-    })
-    .then(response => response.json())
-    .then(data => {
+    if (
+        !message &&
+        (!image || !image.name) &&
+        (!voice || !voice.name)
+    ) {
+        return;
+    }
 
-        if(data.success){
+    sending = true;
+    sendButton.disabled = true;
+    sendButton.textContent = "Sending...";
 
-            form.reset();
-
-            loadMessages();
-
-            setTimeout(() => {
-
-                chat.scrollTop =
-                chat.scrollHeight;
-
-            },200);
-
-        }
-
-    });
-
-});
-
-setInterval(loadMessages,2000);
-
-</script>
-
-<script>
-
-function refreshMessages() {
-
-    fetch("/support/get-messages/")
-    .then(response => response.json())
-    .then(data => {
-
-        let chat = document.getElementById("chat-box");
-
-        let currentHTML = "";
-
-        data.forEach(msg => {
-
-            currentHTML += `
-                <div>
-                    <b>${msg.sender}</b><br>
-
-                    ${msg.message}
-
-                    ${msg.image ?
-                    `<img src="${msg.image}" width="150">`
-                    : ""}
-
-                    ${msg.voice ?
-                    `<audio controls src="${msg.voice}"></audio>`
-                    : ""}
-
-                    <small>${msg.time}</small>
-                </div>
-            `;
-
+    try {
+        const response = await fetch("send/", {
+            method: "POST",
+            body: formData
         });
 
-        if(chat.innerHTML !== currentHTML){
+        const data = await response.json();
 
-            chat.innerHTML = currentHTML;
-
-            chat.scrollTop =
-                chat.scrollHeight;
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Message could not be sent.");
         }
 
-    });
+        form.reset();
 
+        await loadMessages();
+        chat.scrollTop = chat.scrollHeight;
+
+    } catch (error) {
+        alert(error.message);
+    } finally {
+        sending = false;
+        sendButton.disabled = false;
+        sendButton.textContent = "Send";
+    }
 }
 
-refreshMessages();
+form.addEventListener("submit", sendMessage);
 
-setInterval(refreshMessages, 30000);
+loadMessages();
+
+function scheduleRefresh() {
+    clearTimeout(refreshTimer);
+
+    refreshTimer = setTimeout(async () => {
+        await loadMessages();
+        scheduleRefresh();
+    }, 3000);
+}
+
+scheduleRefresh();
 
 </script>
 

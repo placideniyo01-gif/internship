@@ -172,8 +172,8 @@ button:hover{
         {% for item in user_data %}
 
         <div class="user">
-
-            <a href="?user={{ item.user.id }}">
+        <a href="{% url 'admin_chat' item.user.id %}">
+            
 
                 {{ item.user.username }}
 
@@ -291,185 +291,195 @@ button:hover{
 
 <script>
 
-function refreshSidebar(){
 
-    fetch("/support/admin-unread/")
+async function refreshSidebar() {
+    try {
+        const response = await fetch("/support/admin-unread/", {
+            cache: "no-store"
+        });
 
-    .then(res => res.json())
+        if (!response.ok) return;
 
-    .then(data => {
+        const data = await response.json();
 
         data.forEach(item => {
-
             const badge = document.querySelector(
                 `.badge[data-user="${item.id}"]`
             );
 
-            if(!badge) return;
+            if (!badge) return;
 
-            if(item.unread > 0){
-
-                badge.style.display = "inline-block";
-                badge.innerText = item.unread;
-
-            }else{
-
-                badge.style.display = "none";
-
-            }
-
+            badge.textContent = item.unread;
+            badge.style.display =
+                item.unread > 0 ? "inline-block" : "none";
         });
 
-    });
-
+    } catch (error) {
+        console.error("Unread refresh error:", error);
+    }
 }
 
 refreshSidebar();
 
-setInterval(
-    refreshSidebar,
-    1000
-);
+setInterval(refreshSidebar, 5000);
 
-</script>
 
 {% if selected_user %}
+const chat = document.getElementById("chatBox");
+const form = document.getElementById("chatForm");
+const sendButton = form.querySelector('button[type="submit"]');
 
-<script>
+const userId = chat.dataset.userId;
 
-const chat =
-    document.getElementById("chatBox");
+let sending = false;
+let loading = false;
+let refreshTimer = null;
+let previousMessageCount = chat.children.length;
 
-const form =
-    document.getElementById("chatForm");
+chat.scrollTop = chat.scrollHeight;
 
-const userId =
-    chat.dataset.userId;
+function createMessage(msg) {
+    const wrapper = document.createElement("div");
 
-chat.scrollTop =
-    chat.scrollHeight;
+    wrapper.className = msg.is_admin ? "msg mine" : "msg theirs";
 
+    if (msg.message) {
+        const text = document.createElement("div");
+        text.textContent = msg.message;
+        wrapper.appendChild(text);
+    }
 
-function loadMessages(){
+    if (msg.image) {
+        const img = document.createElement("img");
+        img.src = msg.image;
+        img.alt = "Attached image";
+        wrapper.appendChild(img);
+    }
 
-    fetch(
-        `/support/admin-messages/?user=${userId}`
-    )
+    if (msg.voice) {
+        const audio = document.createElement("audio");
+        audio.controls = true;
 
-    .then(res => res.json())
+        const source = document.createElement("source");
+        source.src = msg.voice;
 
-    .then(data => {
+        audio.appendChild(source);
+        wrapper.appendChild(audio);
+    }
 
-        let html = "";
+    const time = document.createElement("div");
+    time.className = "time";
+    time.textContent = msg.time;
 
-        data.forEach(msg => {
+    wrapper.appendChild(time);
 
-            const cls =
-                msg.is_admin
-                ? "mine"
-                : "theirs";
-
-            html += `
-                <div class="msg ${cls}">
-
-                    ${msg.message
-                        ? `<div>${msg.message}</div>`
-                        : ""
-                    }
-
-                    ${msg.image
-                        ? `<img src="${msg.image}">`
-                        : ""
-                    }
-
-                    ${msg.voice
-                        ? `
-                        <audio controls>
-                            <source src="${msg.voice}">
-                        </audio>
-                        `
-                        : ""
-                    }
-
-                    <div class="time">
-                        ${msg.time}
-                    </div>
-
-                </div>
-            `;
-
-        });
-
-        if(chat.innerHTML !== html){
-
-            const nearBottom =
-                chat.scrollHeight -
-                chat.scrollTop <=
-                chat.clientHeight + 150;
-
-            chat.innerHTML = html;
-
-            if(nearBottom){
-
-                chat.scrollTop =
-                    chat.scrollHeight;
-
-            }
-
-        }
-
-    });
-
+    return wrapper;
 }
 
+async function loadMessages() {
+    if (loading) return;
 
-form.addEventListener(
-    "submit",
-    function(e){
+    loading = true;
 
-        e.preventDefault();
+    try {
+        const response = await fetch(
+            `/support/admin-messages/?user=${encodeURIComponent(userId)}`,
+            { cache: "no-store" }
+        );
 
-        const formData =
-            new FormData(form);
+        if (!response.ok) {
+            throw new Error("Could not load messages.");
+        }
 
-        fetch(
-            "/support/admin-send/",
-            {
-                method:"POST",
-                body:formData
+        const data = await response.json();
+
+        if (data.length !== previousMessageCount) {
+            const nearBottom =
+                chat.scrollHeight - chat.scrollTop <=
+                chat.clientHeight + 150;
+
+            const fragment = document.createDocumentFragment();
+
+            data.forEach(msg => {
+                fragment.appendChild(createMessage(msg));
+            });
+
+            chat.replaceChildren(fragment);
+            previousMessageCount = data.length;
+
+            if (nearBottom) {
+                chat.scrollTop = chat.scrollHeight;
             }
-        )
+        }
 
-        .then(res => res.json())
+    } catch (error) {
+        console.error("Admin chat refresh error:", error);
+    } finally {
+        loading = false;
+    }
+}
 
-        .then(data => {
+form.addEventListener("submit", async function(event) {
+    event.preventDefault();
 
-            if(data.success){
+    if (sending) return;
 
-                form.reset();
+    const formData = new FormData(form);
 
-                loadMessages();
+    const message = (formData.get("message") || "").trim();
+    const image = formData.get("image");
+    const voice = formData.get("voice");
 
-                setTimeout(() => {
+    if (
+        !message &&
+        (!image || !image.name) &&
+        (!voice || !voice.name)
+    ) {
+        return;
+    }
 
-                    chat.scrollTop =
-                        chat.scrollHeight;
+    sending = true;
+    sendButton.disabled = true;
+    sendButton.textContent = "Sending...";
 
-                }, 200);
-
-            }
-
+    try {
+        const response = await fetch("/support/admin-send/", {
+            method: "POST",
+            body: formData
         });
 
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Reply could not be sent.");
+        }
+
+        form.reset();
+
+        await loadMessages();
+        chat.scrollTop = chat.scrollHeight;
+
+    } catch (error) {
+        alert(error.message);
+    } finally {
+        sending = false;
+        sendButton.disabled = false;
+        sendButton.textContent = "Send";
     }
-);
+});
 
 loadMessages();
 
-setInterval(
-    loadMessages,
-    1000
-);
+function scheduleChatRefresh() {
+    clearTimeout(refreshTimer);
+
+    refreshTimer = setTimeout(async () => {
+        await loadMessages();
+        scheduleChatRefresh();
+    }, 3000);
+}
+
+scheduleChatRefresh();
 
 </script>
 
