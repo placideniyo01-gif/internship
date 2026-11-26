@@ -36,6 +36,9 @@ from django.conf import settings
 @login_required
 def dashboard(request):
 
+    # Start or update interest calculation using the current balance.
+    settle_interest(request.user, timezone.now())
+
     profile = Profile.objects.get(
         user=request.user
     )
@@ -212,6 +215,7 @@ def dashboard(request):
     )
 
 @login_required
+@transaction.atomic
 def claim_bonus(request):
 
     profile, wallet = settle_interest(
@@ -280,7 +284,9 @@ def claim_bonus(request):
 
 @login_required
 @require_POST
+@transaction.atomic
 def claim_interest(request):
+
     now = timezone.now()
 
     profile, wallet = settle_interest(
@@ -352,8 +358,11 @@ def claim_interest(request):
 
 @login_required
 def live_balance(request):
-    profile = Profile.objects.get(user=request.user)
+    settle_interest(request.user, timezone.now())
 
+    profile = Profile.objects.get(
+        user=request.user
+    )
     wallet, created = InterestWallet.objects.get_or_create(
         user=request.user
     )

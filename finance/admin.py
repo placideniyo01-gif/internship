@@ -1,17 +1,14 @@
-from django.contrib import admin
 
-from .models import (
-    Deposit,
-    Withdrawal,
-    ProfitClaim
-)
-
-from accounts.models import (
-    Profile,
-    ReferralBonus
-)
-from decimal import Decimal
+from django.contrib import admin, messages
+from django.db import transaction
 from django.utils.html import format_html
+
+from decimal import Decimal
+
+from .models import Deposit, Withdrawal, ProfitClaim
+from accounts.models import Profile, ReferralBonus
+from accounts.interest import settle_interest
+
 
 @admin.register(Deposit)
 class DepositAdmin(admin.ModelAdmin):
@@ -24,13 +21,8 @@ class DepositAdmin(admin.ModelAdmin):
         "created_at",
     )
 
-    list_editable = (
-        "status",
-    )
-
-    list_filter = (
-        "status",
-    )
+    list_editable = ("status",)
+    list_filter = ("status",)
 
     readonly_fields = (
         "user",
@@ -48,55 +40,59 @@ class DepositAdmin(admin.ModelAdmin):
     )
 
     def view_proof(self, obj):
-
         if obj.proof:
-
             return format_html(
                 '<a href="{}" target="_blank">View Proof</a>',
                 obj.proof.url
             )
-
         return "No Proof"
 
     view_proof.short_description = "Proof"
 
     def save_model(self, request, obj, form, change):
 
-        try:
-            super().save_model(
-                request,
-                obj,
-                form,
-                change
+        with transaction.atomic():
+
+            # Save the admin changes first.
+            super().save_model(request, obj, form, change)
+
+            # Lock the deposit to prevent duplicate crediting.
+            deposit = Deposit.objects.select_for_update().get(
+                pk=obj.pk
             )
 
-            if obj.status == "Approved" and not obj.credited:
+            if deposit.status == "Approved" and not deposit.credited:
 
-                profile = Profile.objects.get(
-                    user=obj.user
+                # Settle interest BEFORE increasing the balance.
+                settle_interest(
+                    deposit.user,
                 )
 
-                profile.balance += obj.amount
-                profile.total_deposit += obj.amount
-                profile.save()
+                profile = Profile.objects.select_for_update().get(
+                    user=deposit.user
+                )
 
+                profile.balance += deposit.amount
+                profile.total_deposit += deposit.amount
+
+                profile.save(update_fields=[
+                    "balance",
+                    "total_deposit",
+                ])
+
+                # Create referral bonus only once.
                 if profile.referrer:
-
                     ReferralBonus.objects.create(
                         referrer=profile.referrer,
-                        referred_user=obj.user,
+                        referred_user=deposit.user,
                         rate=Decimal("0.01")
                     )
 
+                deposit.credited = True
+                deposit.save(update_fields=["credited"])
+
                 obj.credited = True
-                obj.save()
 
-        except Exception as e:
-
-            print("ERROR TYPE:", type(e))
-            print("ERROR MESSAGE:", str(e))
-
-            raise
 
 @admin.register(Withdrawal)
 class WithdrawalAdmin(admin.ModelAdmin):
@@ -106,7 +102,7 @@ class WithdrawalAdmin(admin.ModelAdmin):
         "amount",
         "wallet_address",
         "status",
-        "created_at"
+        "created_at",
     )
 
     search_fields = (
@@ -114,46 +110,63 @@ class WithdrawalAdmin(admin.ModelAdmin):
         "wallet_address",
     )
 
-    list_filter = (
-        "status",
-    )
+    list_filter = ("status",)
+    list_editable = ("status",)
 
-    readonly_fields = (
-        "wallet_address",
-    )
+    readonly_fields = ("wallet_address",)
 
-    list_editable = (
-        "status",
-    )
+    def save_model(self, request, obj, form, change):
 
-    def save_model(
-        self,
-        request,
-        obj,
-        form,
-        change
-    ):
+        with transaction.atomic():
 
-        super().save_model(
-            request,
-            obj,
-            form,
-            change
-        )
+            super().save_model(request, obj, form, change)
 
-        if (
-            obj.status == "Approved"
-            and not obj.processed
-        ):
-
-            profile = Profile.objects.get(
-                user=obj.user
+            # Lock withdrawal to prevent duplicate processing.
+            withdrawal = Withdrawal.objects.select_for_update().get(
+                pk=obj.pk
             )
 
-            if profile.balance >= obj.amount:
+            if withdrawal.status == "Approved" and not withdrawal.processed:
 
-                profile.balance -= obj.amount
-                profile.save()
+                # Settle interest BEFORE reducing the balance.
+                settle_interest(
+                    withdrawal.user,
+                )
 
-                obj.processed = True
-                obj.save()
+                profile = Profile.objects.select_for_update().get(
+                    user=withdrawal.user
+                )
+
+                if profile.balance >= withdrawal.amount:
+
+                    profile.balance -= withdrawal.amount
+
+                    profile.save(update_fields=["balance"])
+
+                    withdrawal.processed = True
+                    withdrawal.save(update_fields=["processed"])
+
+                    obj.processed = True
+
+                else:
+
+                    # Do not approve a withdrawal without sufficient funds.
+                    withdrawal.status = "Pending"
+                    withdrawal.save(update_fields=["status"])
+
+                    obj.status = "Pending"
+
+                    self.message_user(
+                        request,
+                        "Withdrawal was not approved: insufficient balance.",
+                        level=messages.ERROR
+                    )
+
+
+@admin.register(ProfitClaim)
+class ProfitClaimAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "amount",
+        "created_at",
+    )
