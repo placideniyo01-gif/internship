@@ -1,101 +1,160 @@
-{% load static %}
 
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Deposit</title>
 
 <style>
-
-body{
-    font-family:Arial;
-    background:#f5f5f5;
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
 }
 
-.container{
-    max-width:500px;
-    margin:40px auto;
-    background:white;
-    padding:30px;
-    border-radius:20px;
-    box-shadow:0 0 20px rgba(0,0,0,.1);
+body {
+    background: #f5f5f5;
+    padding: 15px;
 }
 
-.warning{
-    background:#fff7ed;
-    color:#c2410c;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:20px;
+.container {
+    max-width: 500px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,.1);
 }
 
-.wallet-address{
-    word-break:break-all;
-    margin-bottom:15px;
-    line-height:1.6;
+.warning {
+    background: #fff7ed;
+    color: #c2410c;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    line-height: 1.6;
 }
 
-.wallet-box{
-    background:#111827;
-    color:white;
-    padding:15px;
-    border-radius:12px;
-    margin-bottom:20px;
+.message {
+    padding: 13px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
 }
 
-.copy-btn{
-    width:100%;
-    border:none;
-    background:#10b981;
-    color:white;
-    padding:12px;
-    border-radius:10px;
-    cursor:pointer;
-    font-size:14px;
-    font-weight:bold;
+.message.error {
+    background: #fee2e2;
+    color: #991b1b;
 }
 
-.notification{
-    display:none;
-    background:#16a34a;
-    color:white;
-    padding:10px;
-    border-radius:10px;
-    margin-bottom:15px;
+.message.success {
+    background: #dcfce7;
+    color: #166534;
 }
 
-input{
-    width:100%;
-    padding:12px;
-    margin-bottom:15px;
+.message.info {
+    background: #dbeafe;
+    color: #1e40af;
 }
 
-button.submit{
-    width:100%;
-    background:#10b981;
-    color:white;
-    border:none;
-    padding:12px;
-    border-radius:10px;
-    cursor:pointer;
+.message.warning {
+    background: #fef3c7;
+    color: #92400e;
 }
 
+.wallet-address {
+    word-break: break-all;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.wallet-box {
+    background: #111827;
+    color: white;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.copy-btn {
+    width: 100%;
+    border: none;
+    background: #10b981;
+    color: white;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.notification {
+    display: none;
+    background: #16a34a;
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 18px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+button.submit {
+    width: 100%;
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 13px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button.submit:hover,
+.copy-btn:hover {
+    opacity: .9;
+}
+
+@media(max-width: 600px) {
+    .container {
+        margin: 15px auto;
+        padding: 22px;
+    }
+}
 </style>
-
 </head>
+
 <body>
 
 <div class="container">
 
     <h2>Deposit USDT</h2>
 
+    <!-- DJANGO MESSAGES -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message {{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
     <div class="warning">
         ⚠ Use TRC20 network only.<br>
-        Minimum Deposit: <b>5 USDT</b>
+        Minimum Deposit: <b>25 USDT</b>
     </div>
 
     <div id="copied" class="notification">
@@ -103,35 +162,21 @@ button.submit{
     </div>
 
     <div class="wallet-box">
-
-        <div class="wallet-box">
-
-            <div class="wallet-address">
-
-                <span id="wallet">
-                    TCstv6LGK2oMF5MFvqpaA8Ypyi1b1CrGqh
-                </span>
-
-            </div>
-
-            <button
-                type="button"
-                class="copy-btn"
-                onclick="copyWallet()">
-
-                Copy Wallet Address
-
-            </button>
-
+        <div class="wallet-address">
+            <span id="wallet">
+                TCstv6LGK2oMF5MFvqpaA8Ypyi1b1CrGqh
+            </span>
         </div>
 
+        <button
+            type="button"
+            class="copy-btn"
+            onclick="copyWallet()">
+            Copy Wallet Address
+        </button>
     </div>
 
-    <form
-        method="POST"
-        enctype="multipart/form-data"
-    >
-
+    <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
         <label>Amount (USDT)</label>
@@ -139,13 +184,13 @@ button.submit{
         <input
             type="number"
             name="amount"
-            min="5"
+            min="25"
+            step="0.01"
+            placeholder="Minimum 25 USDT"
             required
         >
 
-        <label>
-            Payment Proof Screenshot
-        </label>
+        <label>Payment Proof Screenshot</label>
 
         <input
             type="file"
@@ -154,43 +199,44 @@ button.submit{
             required
         >
 
-        <button
-            class="submit"
-            type="submit"
-        >
+        <button class="submit" type="submit">
             Confirm Deposit
         </button>
-
     </form>
 
 </div>
 
 <script>
+function copyWallet() {
+    const wallet = document.getElementById("wallet").innerText.trim();
+    const notice = document.getElementById("copied");
 
-function copyWallet(){
+    navigator.clipboard.writeText(wallet)
+        .then(function() {
+            notice.style.display = "block";
 
-    let wallet =
-    document.getElementById(
-        "wallet"
-    ).innerText;
-
-    navigator.clipboard.writeText(
-        wallet
-    );
-
-    let notice =
-    document.getElementById(
-        "copied"
-    );
-    notice.style.display="block";
-
-    setTimeout(function(){
-
-        notice.style.display="none";
-
-    },3000);
+            setTimeout(function() {
+                notice.style.display = "none";
+            }, 3000);
+        })
+        .catch(function() {
+            alert("Unable to copy wallet address. Please copy it manually.");
+        });
 }
 
+// Hide Django messages after 5 seconds.
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".message").forEach(function(message) {
+        setTimeout(function() {
+            message.style.transition = "opacity .5s ease";
+            message.style.opacity = "0";
+
+            setTimeout(function() {
+                message.remove();
+            }, 500);
+        }, 5000);
+    });
+});
 </script>
 
 </body>

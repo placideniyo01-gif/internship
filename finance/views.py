@@ -1,32 +1,37 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+
+import json
+import logging
+from decimal import Decimal, InvalidOperation
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.db import transaction
 from django.http import JsonResponse
+from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
-from django.conf import settings
-
-from decimal import Decimal
-from datetime import timedelta
-import json
+from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.interest import settle_interest
 from accounts.models import Profile, Referral
 
 from .models import Deposit, Withdrawal, InternshipTransfer
 from .forms import WithdrawalForm
-from decimal import Decimal, InvalidOperation
 
-from .models import (
-    Deposit,
-    Withdrawal,
-    InternshipTransfer
-)
-
-import logging
 
 logger = logging.getLogger(__name__)
+
+PENDING_WITHDRAWAL_SESSION_KEY = "pending_withdrawal"
+WITHDRAWAL_CONFIRMATION_TIMEOUT = 600
+
+
+# =====================================================
+# DEPOSIT
+# Minimum deposit: 25 USDT
+# =====================================================
 
 @login_required
 def deposit(request):
@@ -35,24 +40,27 @@ def deposit(request):
 
         try:
             amount = Decimal(
-                request.POST.get("amount", "0")
+                request.POST.get("amount", "").strip()
             )
         except (InvalidOperation, TypeError, ValueError):
-
             messages.error(
                 request,
                 "Please enter a valid deposit amount."
             )
-
             return redirect("deposit")
 
         if not amount.is_finite() or amount < Decimal("25"):
-
             messages.error(
                 request,
                 "Minimum deposit is 25 USDT."
             )
+            return redirect("deposit")
 
+        if amount != amount.quantize(Decimal("0.01")):
+            messages.error(
+                request,
+                "Deposit amount cannot have more than 2 decimal places."
+            )
             return redirect("deposit")
 
         proof = request.FILES.get("proof")
@@ -67,23 +75,27 @@ def deposit(request):
         Deposit.objects.create(
             user=request.user,
             amount=amount,
-            proof=proof
+            proof=proof,
+            status="Pending"
         )
 
         messages.success(
             request,
-            "Deposit submitted successfully."
+            "Deposit submitted successfully. Please wait for approval."
         )
 
         return redirect("deposit_history")
 
-    return render(
-        request,
-        "finance/deposit.html"
-    )
+    return render(request, "finance/deposit.html")
+
+
+# =====================================================
+# DEPOSIT AND TRANSACTION HISTORY
+# =====================================================
 
 @login_required
 def deposit_history(request):
+
     deposits = Deposit.objects.filter(
         user=request.user
     ).order_by("-created_at")
@@ -95,137 +107,111 @@ def deposit_history(request):
     sent_internal_transfers = InternshipTransfer.objects.filter(
         user=request.user,
         receiver__isnull=False
-    ).select_related("receiver").order_by("-created_at")
+    ).select_related(
+        "receiver"
+    ).order_by("-created_at")
 
     received_internal_transfers = InternshipTransfer.objects.filter(
         receiver=request.user
-    ).select_related("user").order_by("-created_at")
+    ).select_related(
+        "user"
+    ).order_by("-created_at")
 
-    return render(request, "finance/deposit_history.html", {
-        "deposits": deposits,
-        "withdrawals": withdrawals,
-        "sent_internal_transfers": sent_internal_transfers,
-        "received_internal_transfers": received_internal_transfers,
-    })
+    return render(
+        request,
+        "finance/deposit_history.html",
+        {
+            "deposits": deposits,
+            "withdrawals": withdrawals,
+            "sent_internal_transfers": sent_internal_transfers,
+            "received_internal_transfers": received_internal_transfers,
+        }
+    )
 
-from decimal import Decimal
-from datetime import timedelta
 
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.utils import timezone
+# =====================================================
+# WITHDRAWAL VALIDATION
+# =====================================================
 
-from accounts.models import Profile, Referral
-from .forms import WithdrawalForm
-from .models import Withdrawal
+def validate_withdrawal_request(user, amount):
 
+    if not amount.is_finite() or amount <= Decimal("0"):
+        return "Please enter a valid withdrawal amount."
+
+    if amount != amount.quantize(Decimal("0.01")):
+        return "Amount cannot have more than 2 decimal places."
+
+    active_referrals = Referral.objects.filter(
+        referrer=user,
+        referred_user__profile__total_deposit__gt=0
+    ).count()
+
+    if active_referrals < 2 and amount < Decimal("50"):
+        return "Minimum withdrawal is 50 USDT."
+
+    last_withdrawal = Withdrawal.objects.filter(
+        user=user
+    ).order_by("-created_at").first()
+
+    if last_withdrawal:
+        next_date = last_withdrawal.created_at + timedelta(days=7)
+
+        if timezone.now() < next_date:
+            return (
+                "You can only withdraw once every 7 days. "
+                f"Next withdrawal: {next_date.strftime('%d %b %Y')}."
+            )
+
+    profile = Profile.objects.get(user=user)
+
+    if amount > profile.balance:
+        return "Insufficient balance."
+
+    return None
+
+
+# =====================================================
+# WITHDRAWAL FORM
+# This view ONLY prepares the confirmation.
+# It does NOT create a Withdrawal record.
+# =====================================================
 
 @login_required
 def withdraw(request):
 
-    profile = Profile.objects.get(
+    profile, created = Profile.objects.get_or_create(
         user=request.user
     )
 
     if request.method == "POST":
 
-        form = WithdrawalForm(
-            request.POST
-        )
+        form = WithdrawalForm(request.POST)
 
         if form.is_valid():
 
-            amount = form.cleaned_data[
-                "amount"
-            ]
+            amount = form.cleaned_data["amount"]
+            wallet_address = form.cleaned_data["wallet_address"].strip()
 
-            active_referrals = Referral.objects.filter(
-                referrer=request.user,
-                referred_user__profile__total_deposit__gt=0
-            ).count()
-
-            last_withdrawal = Withdrawal.objects.filter(
-                user=request.user
-            ).order_by("-created_at").first()
-
-            if last_withdrawal:
-
-                next_date = (
-                    last_withdrawal.created_at +
-                    timedelta(days=7)
-                )
-
-                if timezone.now() < next_date:
-
-                    form.add_error(
-                        None,
-                        f"You can only withdraw once every 7 days. Next withdrawal: {next_date.strftime('%d %b %Y')}"
-                    )
-
-                    return render(
-                        request,
-                        "finance/withdraw.html",
-                        {
-                            "form": form,
-                            "balance": profile.balance,
-                        }
-                    )
-
-            if active_referrals < 2:
-
-                if amount < Decimal("50"):
-
-                    form.add_error(
-                        "amount",
-                        "Minimum withdrawal is 50 USDT."
-                    )
-
-                    return render(
-                        request,
-                        "finance/withdraw.html",
-                        {
-                            "form": form,
-                            "balance": profile.balance,
-                        }
-                    )
-
-            if amount > profile.balance:
-
-                form.add_error(
-                    "amount",
-                    "Insufficient balance."
-                )
-
-                return render(
-                    request,
-                    "finance/withdraw.html",
-                    {
-                        "form": form,
-                        "balance": profile.balance,
-                    }
-                )
-
-            # Create withdrawal directly
-            Withdrawal.objects.create(
-                user=request.user,
-                amount=amount,
-                wallet_address=form.cleaned_data[
-                    "wallet_address"
-                ]
+            error = validate_withdrawal_request(
+                request.user,
+                amount
             )
 
-            messages.success(
-                request,
-                "Withdrawal request submitted successfully."
-            )
+            if error:
+                form.add_error(None, error)
 
-            return redirect(
-                "dashboard"
-            )
+            else:
+                request.session[PENDING_WITHDRAWAL_SESSION_KEY] = {
+                    "amount": str(amount),
+                    "wallet_address": wallet_address,
+                    "created_at": timezone.now().timestamp(),
+                }
+
+                request.session.modified = True
+
+                return redirect("withdraw_confirm")
 
     else:
-
         form = WithdrawalForm()
 
     return render(
@@ -233,44 +219,179 @@ def withdraw(request):
         "finance/withdraw.html",
         {
             "form": form,
-            "balance": profile.balance
+            "balance": profile.balance,
         }
     )
 
-from decimal import Decimal
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
-from accounts.models import Profile
-import json
-from django.conf import settings
-from finance.models import InternshipTransfer
 
-@csrf_exempt
-def receive_wallet_transfer(request):
+# =====================================================
+# WITHDRAWAL CONFIRMATION
+# Creates the request ONLY after Confirm is clicked.
+# =====================================================
 
-    if request.method != "POST":
+@login_required
+@require_http_methods(["GET", "POST"])
+def withdraw_confirm(request):
 
-        return JsonResponse(
-            {
-                "success": False,
-                "message": "POST request required."
-            },
-            status=405
+    pending = request.session.get(
+        PENDING_WITHDRAWAL_SESSION_KEY
+    )
+
+    if not pending:
+        messages.error(
+            request,
+            "No pending withdrawal confirmation was found."
         )
+        return redirect("withdraw")
 
     try:
+        amount = Decimal(pending["amount"])
+        wallet_address = pending["wallet_address"]
+        created_at = float(pending["created_at"])
 
-        data = json.loads(
-            request.body
+    except (KeyError, InvalidOperation, TypeError, ValueError):
+        request.session.pop(
+            PENDING_WITHDRAWAL_SESSION_KEY,
+            None
+        )
+        messages.error(
+            request,
+            "Invalid withdrawal confirmation. Please try again."
+        )
+        return redirect("withdraw")
+
+    if timezone.now().timestamp() - created_at > WITHDRAWAL_CONFIRMATION_TIMEOUT:
+        request.session.pop(
+            PENDING_WITHDRAWAL_SESSION_KEY,
+            None
+        )
+        messages.error(
+            request,
+            "Withdrawal confirmation expired. Please submit again."
+        )
+        return redirect("withdraw")
+
+    profile = Profile.objects.get(user=request.user)
+
+    error = validate_withdrawal_request(
+        request.user,
+        amount
+    )
+
+    if error:
+        request.session.pop(
+            PENDING_WITHDRAWAL_SESSION_KEY,
+            None
+        )
+        messages.error(request, error)
+        return redirect("withdraw")
+
+    remaining_balance = profile.balance - amount
+
+    if request.method == "POST":
+
+        with transaction.atomic():
+
+            locked_profile = Profile.objects.select_for_update().get(
+                user=request.user
+            )
+
+            # Recheck balance and withdrawal rules at confirmation time.
+            error = validate_withdrawal_request(
+                request.user,
+                amount
+            )
+
+            if error:
+                request.session.pop(
+                    PENDING_WITHDRAWAL_SESSION_KEY,
+                    None
+                )
+                messages.error(request, error)
+                return redirect("withdraw")
+
+            if amount > locked_profile.balance:
+                request.session.pop(
+                    PENDING_WITHDRAWAL_SESSION_KEY,
+                    None
+                )
+                messages.error(
+                    request,
+                    "Insufficient balance."
+                )
+                return redirect("withdraw")
+
+            Withdrawal.objects.create(
+                user=request.user,
+                amount=amount,
+                wallet_address=wallet_address,
+                status="Pending"
+            )
+
+            request.session.pop(
+                PENDING_WITHDRAWAL_SESSION_KEY,
+                None
+            )
+
+        messages.success(
+            request,
+            "Withdrawal request submitted successfully. Please wait for admin approval."
         )
 
-        if (
-            data.get("secret_key")
-            !=
-            settings.API_TRANSFER_SECRET
-        ):
+        return redirect("dashboard")
 
+    return render(
+        request,
+        "finance/withdraw_confirm.html",
+        {
+            "amount": amount,
+            "wallet_address": wallet_address,
+            "balance": profile.balance,
+            "remaining_balance": remaining_balance,
+        }
+    )
+
+
+# =====================================================
+# CANCEL WITHDRAWAL CONFIRMATION
+# No Withdrawal record is created.
+# =====================================================
+
+@login_required
+@require_POST
+def cancel_withdraw(request):
+
+    request.session.pop(
+        PENDING_WITHDRAWAL_SESSION_KEY,
+        None
+    )
+
+    messages.info(
+        request,
+        "Withdrawal cancelled. No request was submitted."
+    )
+
+    return redirect("withdraw")
+
+
+# =====================================================
+# EXTERNAL WALLET TRANSFER API
+# =====================================================
+
+@csrf_exempt
+@require_POST
+def receive_wallet_transfer(request):
+
+    try:
+        data = json.loads(request.body)
+
+        api_secret = getattr(
+            settings,
+            "API_TRANSFER_SECRET",
+            None
+        )
+
+        if not api_secret or data.get("secret_key") != api_secret:
             return JsonResponse(
                 {
                     "success": False,
@@ -279,22 +400,53 @@ def receive_wallet_transfer(request):
                 status=401
             )
 
-        username = data.get(
-            "username"
-        )
+        username = data.get("username")
 
-        amount = Decimal(
-            str(
-                data.get("amount")
+        if not username:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Username is required."
+                },
+                status=400
             )
-        )
+
+        try:
+            amount = Decimal(
+                str(data.get("amount", ""))
+            )
+        except (InvalidOperation, TypeError, ValueError):
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Invalid transfer amount."
+                },
+                status=400
+            )
+
+        if not amount.is_finite() or amount <= Decimal("0"):
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Transfer amount must be greater than zero."
+                },
+                status=400
+            )
+
+        if amount != amount.quantize(Decimal("0.01")):
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Amount cannot have more than 2 decimal places."
+                },
+                status=400
+            )
 
         user = User.objects.filter(
             username=username
         ).first()
 
         if not user:
-
             return JsonResponse(
                 {
                     "success": False,
@@ -303,35 +455,53 @@ def receive_wallet_transfer(request):
                 status=404
             )
 
-        profile, wallet = settle_interest(
-            user,
-            timezone.now()
-        )
+        with transaction.atomic():
 
-        profile.balance += amount
+            settle_interest(
+                user,
+                timezone.now()
+            )
 
-        profile.save()
+            profile = Profile.objects.select_for_update().get(
+                user=user
+            )
 
-        InternshipTransfer.objects.create(
-            user=user,
-            receiver_username=user.username,
-            amount=amount,
-            status="SUCCESS"
-        )
+            profile.balance += amount
+            profile.save(update_fields=["balance"])
+
+            InternshipTransfer.objects.create(
+                user=user,
+                receiver=None,
+                receiver_username=user.username,
+                amount=amount,
+                status="SUCCESS"
+            )
 
         return JsonResponse(
             {
                 "success": True,
-                "message": "Transfer completed."
+                "message": "Transfer completed successfully."
             }
         )
 
-    except Exception as e:
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Invalid JSON data."
+            },
+            status=400
+        )
+
+    except Exception:
+        logger.exception(
+            "External wallet transfer failed."
+        )
 
         return JsonResponse(
             {
                 "success": False,
-                "message": str(e)
+                "message": "Transfer could not be completed."
             },
-            status=400
+            status=500
         )

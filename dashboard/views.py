@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from decimal import Decimal, InvalidOperation
@@ -522,6 +523,7 @@ def delete_account(request):
 from django.contrib.auth.decorators import login_required
 
 
+
 @login_required
 def unread_support_count(request):
 
@@ -533,8 +535,6 @@ def unread_support_count(request):
     return JsonResponse({
         "count": count
     })
-
-from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
 def check_username_api(request):
@@ -590,8 +590,8 @@ def check_username_api(request):
         "username": user.username,
 
         "names": user.get_full_name() or user.username
+})
 
-    })
 @login_required
 def internal_transfer(request):
 
@@ -600,17 +600,30 @@ def internal_transfer(request):
         username = request.POST.get("username", "").strip()
         amount_input = request.POST.get("amount", "").strip()
 
+        if not username:
+            messages.error(
+                request,
+                "Please enter the recipient username."
+            )
+            return redirect("internal_transfer")
+
         receiver = User.objects.filter(
             username__iexact=username,
             is_active=True
         ).first()
 
         if not receiver:
-            messages.error(request, "Recipient username was not found.")
+            messages.error(
+                request,
+                "User not found. Please check the username and try again."
+            )
             return redirect("internal_transfer")
 
         if receiver.pk == request.user.pk:
-            messages.error(request, "You cannot transfer money to yourself.")
+            messages.error(
+                request,
+                "You cannot transfer money to yourself."
+            )
             return redirect("internal_transfer")
 
         try:
@@ -623,16 +636,23 @@ def internal_transfer(request):
                 raise InvalidOperation
 
         except (InvalidOperation, ValueError):
-            messages.error(request, "Enter a valid amount with a maximum of 2 decimal places.")
+            messages.error(
+                request,
+                "Please enter a valid amount with a maximum of 2 decimal places."
+            )
             return redirect("internal_transfer")
 
-        profile = Profile.objects.get(user=request.user)
+        profile = Profile.objects.get(
+            user=request.user
+        )
 
         if amount > profile.balance:
-            messages.error(request, "Insufficient balance.")
+            messages.error(
+                request,
+                "Insufficient balance."
+            )
             return redirect("internal_transfer")
 
-        # Keep transfer details temporarily in the session.
         request.session["pending_internal_transfer"] = {
             "receiver_id": receiver.pk,
             "receiver_username": receiver.username,

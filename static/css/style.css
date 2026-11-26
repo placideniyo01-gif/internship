@@ -411,4 +411,38 @@ button{
         color: #842029;
         border-color: #f5c2c7;
     }
+
+
+    .support-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        background: #00d26a;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        box-shadow: 0 5px 20px rgba(0,0,0,.3);
+    }
+
+    .support-btn:hover {
+        background: #00b85c;
+    }
+
+    .support-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: red;
+        color: white;
+        border-radius: 50%;
+        padding: 4px 7px;
+        font-size: 12px;
+        font-weight: bold;
+        min-width: 22px;
+        text-align: center;
+    }
+
 }

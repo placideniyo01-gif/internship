@@ -1,13 +1,25 @@
 
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>Internal Transfer</title>
+
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Segoe UI, sans-serif;
+        }
+
         .transfer-container {
             max-width: 430px;
             margin: 40px auto;
@@ -16,14 +28,24 @@
             border-radius: 16px;
             box-shadow: 0 5px 25px rgba(0,0,0,.08);
         }
+
+        .transfer-container h2 {
+            margin-bottom: 10px;
+        }
+
         .transfer-container input {
             width: 100%;
             padding: 14px;
             margin: 10px 0 18px;
             border: 1px solid #ddd;
             border-radius: 9px;
-            box-sizing: border-box;
+            outline: none;
         }
+
+        .transfer-container input:focus {
+            border-color: #087f5b;
+        }
+
         .transfer-container button {
             width: 100%;
             padding: 14px;
@@ -34,21 +56,81 @@
             font-weight: bold;
             cursor: pointer;
         }
+
+        .transfer-container button:hover {
+            opacity: .9;
+        }
+
         .transfer-container label {
             font-weight: 600;
         }
+
+        /* Notification design */
+
+        .notification {
+            padding: 13px 15px;
+            margin: 18px 0;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: opacity .5s ease, transform .5s ease;
+        }
+
+        .notification.error {
+            background: #ffe5e5;
+            color: #b42318;
+            border: 1px solid #ffb4b4;
+        }
+
+        .notification.success {
+            background: #e2f8eb;
+            color: #087f5b;
+            border: 1px solid #9de0b8;
+        }
+
+        .notification.warning {
+            background: #fff4d6;
+            color: #946200;
+            border: 1px solid #ffdf8a;
+        }
+
+        .notification.hide {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #087f5b;
+            text-decoration: none;
+        }
+
+        @media(max-width: 500px) {
+            .transfer-container {
+                margin: 20px 15px;
+            }
+        }
     </style>
 </head>
+
 <body>
 
 <div class="transfer-container">
 
     <h2>Internal Transfer</h2>
-    <p>Send USDT instantly to another Internship Saving user.</p>
 
+    <p>
+        Send USDT instantly to another Internship Saving user.
+    </p>
+
+    <!-- Notifications -->
     {% if messages %}
         {% for message in messages %}
-            <p class="{{ message.tags }}">{{ message }}</p>
+            <div class="notification {{ message.tags }}">
+                {{ message }}
+            </div>
         {% endfor %}
     {% endif %}
 
@@ -56,6 +138,7 @@
         {% csrf_token %}
 
         <label>Recipient Username</label>
+
         <input
             type="text"
             name="username"
@@ -64,6 +147,7 @@
         >
 
         <label>Amount (USDT)</label>
+
         <input
             type="number"
             name="amount"
@@ -73,14 +157,38 @@
             required
         >
 
-        <button type="submit">Send</button>
+        <button type="submit">
+            Continue
+        </button>
     </form>
 
-    <p style="text-align:center;margin-top:20px;">
-        <a href="{% url 'dashboard' %}">Back to Dashboard</a>
-    </p>
+    <a href="{% url 'dashboard' %}" class="back-link">
+        Back to Dashboard
+    </a>
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const notifications = document.querySelectorAll(".notification");
+
+    notifications.forEach(function(notification) {
+
+        setTimeout(function() {
+
+            notification.classList.add("hide");
+
+            setTimeout(function() {
+                notification.remove();
+            }, 500);
+
+        }, 5000);
+
+    });
+
+});
+</script>
 
 </body>
 </html>

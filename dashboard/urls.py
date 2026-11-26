@@ -1,17 +1,20 @@
+
 from django.urls import path
 from . import views
 
 urlpatterns = [
-
     path("", views.dashboard, name="dashboard"),
 
     path("claim-interest/", views.claim_interest, name="claim_interest"),
-
     path("welcome/", views.welcome, name="welcome"),
-
     path("live-balance/", views.live_balance, name="live_balance"),
 
-    path("claim-referral-bonus/", views.claim_bonus, name="claim_referral_bonus"),
+    path(
+        "claim-referral-bonus/",
+        views.claim_bonus,
+        name="claim_referral_bonus"
+    ),
+
     path(
         "transfer/",
         views.internal_transfer,
@@ -23,11 +26,8 @@ urlpatterns = [
         views.confirm_internal_transfer,
         name="confirm_internal_transfer"
     ),
-    path(
-        "settings/",
-        views.settings_view,
-        name="settings"
-    ),
+
+    path("settings/", views.settings_view, name="settings"),
 
     path(
         "change-password/",
@@ -41,8 +41,9 @@ urlpatterns = [
         name="delete_account"
     ),
 
+    # SUPPORT NOTIFICATION
     path(
-        "dashboard/unread-support/",
+        "unread-support/",
         views.unread_support_count,
         name="unread_support_count"
     ),
@@ -52,5 +53,4 @@ urlpatterns = [
         views.check_username_api,
         name="check_username_api"
     ),
-
 ]

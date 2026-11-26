@@ -1,185 +1,164 @@
+
 {% load static %}
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
-
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <title>Transaction History</title>
 
 <style>
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Segoe UI,sans-serif;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Segoe UI, sans-serif;
 }
 
-body{
-    min-height:100vh;
-
+body {
+    min-height: 100vh;
     background:
-    linear-gradient(
-        rgba(0,0,0,.7),
-        rgba(0,0,0,.7)
-    ),
-    url("{% static 'images/bg.jpg' %}");
-
-    background-size:cover;
-    background-position:center;
-
-    padding:30px;
+        linear-gradient(rgba(0,0,0,.7), rgba(0,0,0,.7)),
+        url("{% static 'images/bg.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    padding: 30px;
 }
 
-.container{
-    max-width:1000px;
-    margin:auto;
+.container {
+    max-width: 1000px;
+    margin: auto;
 }
 
-.card{
-    background:rgba(255,255,255,.08);
-
-    backdrop-filter:blur(15px);
-
-    border-radius:20px;
-
-    padding:25px;
-
-    color:white;
-
-    margin-bottom:25px;
+.card {
+    background: rgba(255,255,255,.08);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    padding: 25px;
+    color: white;
+    margin-bottom: 25px;
 }
 
-h1,
-h2{
-    margin-bottom:20px;
+h1, h2 {
+    margin-bottom: 20px;
 }
 
-.top{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:20px;
-    gap:15px;
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
 }
 
-.btn{
-    background:#00d26a;
-    color:white;
-    padding:10px 20px;
-    border-radius:10px;
-    text-decoration:none;
-    font-weight:600;
+.btn {
+    background: #00d26a;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-.btn:hover{
-    opacity:.9;
+.btn:hover {
+    opacity: .9;
 }
 
-.table-wrapper{
-    width:100%;
-    overflow-x:auto;
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
 }
 
-table{
-    width:100%;
-    border-collapse:collapse;
-    min-width:600px;
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
 }
 
-th{
-    background:#111827;
-    padding:15px;
-    text-align:left;
-    white-space:nowrap;
+th {
+    background: #111827;
+    padding: 15px;
+    text-align: left;
+    white-space: nowrap;
 }
 
-td{
-    padding:15px;
-    border-bottom:1px solid rgba(255,255,255,.1);
+td {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
 }
 
-.wallet-address{
-    max-width:180px;
-    word-break:break-all;
+.wallet-address {
+    max-width: 180px;
+    word-break: break-all;
 }
 
-.pending{
-    color:orange;
-    font-weight:bold;
+.pending {
+    color: orange;
+    font-weight: bold;
 }
 
-.approved{
-    color:#00d26a;
-    font-weight:bold;
+.approved {
+    color: #00d26a;
+    font-weight: bold;
 }
 
-.rejected{
-    color:red;
-    font-weight:bold;
+.rejected {
+    color: #ff5252;
+    font-weight: bold;
 }
 
-.empty{
-    text-align:center;
-    padding:40px;
+.empty {
+    text-align: center;
+    padding: 35px 15px;
+    color: rgba(255,255,255,.75);
 }
 
-.section-title{
-    margin-bottom:20px;
+.section-title {
+    margin-bottom: 20px;
 }
 
-/* Mobile */
-
-@media(max-width:768px){
-
-    body{
-        padding:15px;
+@media(max-width:768px) {
+    body {
+        padding: 15px;
     }
 
-    .card{
-        padding:20px;
+    .card {
+        padding: 20px;
     }
 
-    .top{
-        flex-direction:row;
-        align-items:center;
+    .top {
+        flex-direction: row;
+        align-items: center;
     }
 
-    h1,
-    h2{
-        font-size:18px;
+    h1, h2 {
+        font-size: 18px;
     }
 
-    .btn{
-        padding:8px 15px;
-        font-size:14px;
+    .btn {
+        padding: 8px 15px;
+        font-size: 14px;
     }
 
-    table{
-        min-width:500px;
+    table {
+        min-width: 500px;
     }
 
-    th,
-    td{
-        padding:12px 10px;
-        font-size:14px;
+    th, td {
+        padding: 12px 10px;
+        font-size: 14px;
     }
 
-    .wallet-address{
-        max-width:120px;
-        font-size:13px;
+    .wallet-address {
+        max-width: 120px;
+        font-size: 13px;
     }
-
 }
-
 </style>
-
 </head>
 
 <body>
@@ -187,240 +166,113 @@ td{
 <div class="container">
 
     <!-- DEPOSIT HISTORY -->
-
     <div class="card">
 
         <div class="top">
-
             <h1>Deposit History</h1>
 
-            <a href="{% url 'deposit' %}"
-               class="btn">
-
+            <a href="{% url 'deposit' %}" class="btn">
                 New Deposit
-
             </a>
-
         </div>
 
         {% if deposits %}
-
         <div class="table-wrapper">
-
             <table>
-
                 <thead>
-
                     <tr>
-
                         <th>Amount</th>
-
                         <th>Status</th>
-
                         <th>Date</th>
-
                     </tr>
-
                 </thead>
 
                 <tbody>
-
                     {% for deposit in deposits %}
-
                     <tr>
+                        <td>${{ deposit.amount }}</td>
 
                         <td>
-                            ${{ deposit.amount }}
-                        </td>
-
-                        <td>
-
                             {% if deposit.status == "Approved" %}
-
-                                <span class="approved">
-
-                                    Approved
-
-                                </span>
-
+                                <span class="approved">Approved</span>
                             {% elif deposit.status == "Rejected" %}
-
-                                <span class="rejected">
-
-                                    Rejected
-
-                                </span>
-
+                                <span class="rejected">Rejected</span>
                             {% else %}
-
-                                <span class="pending">
-
-                                    Pending
-
-                                </span>
-
+                                <span class="pending">Pending</span>
                             {% endif %}
-
                         </td>
 
-                        <td>
-
-                            {{ deposit.created_at|date:"d M Y H:i" }}
-
-                        </td>
-
+                        <td>{{ deposit.created_at|date:"d M Y H:i" }}</td>
                     </tr>
-
                     {% endfor %}
-
                 </tbody>
-
             </table>
-
         </div>
-
         {% else %}
-
         <div class="empty">
-
             <h3>No Deposits Yet</h3>
-
-            <p>
-
-                Your deposit history will appear here.
-
-            </p>
-
+            <p>Your deposit history will appear here.</p>
         </div>
-
         {% endif %}
 
     </div>
 
 
     <!-- WITHDRAWAL HISTORY -->
-
     <div class="card">
 
-        <h2 class="section-title">
-
-            Withdrawal History
-
-        </h2>
+        <h2 class="section-title">Withdrawal History</h2>
 
         {% if withdrawals %}
-
         <div class="table-wrapper">
-
             <table>
-
                 <thead>
-
                     <tr>
-
                         <th>Amount</th>
-
                         <th>Wallet Address</th>
-
                         <th>Status</th>
-
                         <th>Date</th>
-
                     </tr>
-
                 </thead>
 
                 <tbody>
-
                     {% for withdrawal in withdrawals %}
-
                     <tr>
-
-                        <td>
-
-                            ${{ withdrawal.amount }}
-
-                        </td>
+                        <td>${{ withdrawal.amount }}</td>
 
                         <td class="wallet-address">
-
                             {{ withdrawal.wallet_address }}
-
                         </td>
 
                         <td>
-
                             {% if withdrawal.status == "Approved" %}
-
-                                <span class="approved">
-
-                                    Approved
-
-                                </span>
-
+                                <span class="approved">Approved</span>
                             {% elif withdrawal.status == "Rejected" %}
-
-                                <span class="rejected">
-
-                                    Rejected
-
-                                </span>
-
+                                <span class="rejected">Rejected</span>
                             {% else %}
-
-                                <span class="pending">
-
-                                    Pending
-
-                                </span>
-
+                                <span class="pending">Pending</span>
                             {% endif %}
-
                         </td>
 
-                        <td>
-
-                            {{ withdrawal.created_at|date:"d M Y H:i" }}
-
-                        </td>
-
+                        <td>{{ withdrawal.created_at|date:"d M Y H:i" }}</td>
                     </tr>
-
                     {% endfor %}
-
                 </tbody>
-
             </table>
-
         </div>
-
         {% else %}
-
         <div class="empty">
-
             <h3>No Withdrawals Yet</h3>
-
-            <p>
-
-                Your withdrawal history will appear here.
-
-            </p>
-
+            <p>Your withdrawal history will appear here.</p>
         </div>
-
         {% endif %}
 
     </div>
 
+
+    <!-- SENT INTERNAL TRANSFERS -->
     <div class="card">
 
-        <h2 class="section-title">
-            Internship Transfer History
-        </h2>
-
-        {% if internship_transfers %}
-
-    <div class="card">
         <h2 class="section-title">Sent Internally</h2>
 
         {% if sent_internal_transfers %}
@@ -442,6 +294,7 @@ td{
                         <td>{{ transfer.receiver_username }}</td>
                         <td>${{ transfer.amount }}</td>
                         <td>Sent internally</td>
+
                         <td>
                             {% if transfer.status == "SUCCESS" %}
                                 <span class="approved">Success</span>
@@ -451,6 +304,7 @@ td{
                                 <span class="pending">Pending</span>
                             {% endif %}
                         </td>
+
                         <td>{{ transfer.created_at|date:"d M Y H:i" }}</td>
                     </tr>
                     {% endfor %}
@@ -463,8 +317,13 @@ td{
             <p>Your sent transfers will appear here.</p>
         </div>
         {% endif %}
+
     </div>
+
+
+    <!-- RECEIVED INTERNAL TRANSFERS -->
     <div class="card">
+
         <h2 class="section-title">Received Internally</h2>
 
         {% if received_internal_transfers %}
@@ -486,6 +345,7 @@ td{
                         <td>{{ transfer.user.username }}</td>
                         <td>${{ transfer.amount }}</td>
                         <td>Received internally</td>
+
                         <td>
                             {% if transfer.status == "SUCCESS" %}
                                 <span class="approved">Success</span>
@@ -495,6 +355,7 @@ td{
                                 <span class="pending">Pending</span>
                             {% endif %}
                         </td>
+
                         <td>{{ transfer.created_at|date:"d M Y H:i" }}</td>
                     </tr>
                     {% endfor %}
@@ -507,7 +368,9 @@ td{
             <p>Your received transfers will appear here.</p>
         </div>
         {% endif %}
+
     </div>
+
 </div>
 
 </body>

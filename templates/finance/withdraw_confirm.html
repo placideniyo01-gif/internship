@@ -1,0 +1,187 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<title>Confirm Withdrawal</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    font-family: Segoe UI, Arial, sans-serif;
+}
+
+body {
+    background: #f3f4f6;
+    padding: 20px;
+}
+
+.container {
+    max-width: 500px;
+    margin: 50px auto;
+    background: white;
+    padding: 28px;
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.08);
+}
+
+h2 {
+    margin-bottom: 10px;
+    color: #111827;
+}
+
+.subtitle {
+    color: #6b7280;
+    margin-bottom: 25px;
+}
+
+.detail {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+}
+
+.detail label {
+    display: block;
+    color: #6b7280;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.detail strong {
+    display: block;
+    color: #111827;
+    font-size: 18px;
+    overflow-wrap: anywhere;
+}
+
+.amount {
+    color: #059669 !important;
+    font-size: 25px !important;
+}
+
+.warning {
+    background: #fff7ed;
+    color: #9a3412;
+    padding: 15px;
+    border-radius: 10px;
+    line-height: 1.5;
+    font-size: 14px;
+    margin: 20px 0;
+}
+
+.buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.cancel {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.confirm {
+    background: #059669;
+    color: white;
+}
+
+button:hover {
+    opacity: .9;
+}
+
+@media(max-width: 450px) {
+    .container {
+        margin: 15px auto;
+        padding: 20px;
+    }
+
+    .buttons {
+        flex-direction: column-reverse;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Confirm Withdrawal</h2>
+
+    <p class="subtitle">
+        Please review your withdrawal details carefully.
+    </p>
+
+    <div class="detail">
+        <label>Withdrawal Amount</label>
+        <strong class="amount">
+            {{ amount|floatformat:2 }} USDT
+        </strong>
+    </div>
+
+    <div class="detail">
+        <label>TRC20 Wallet Address</label>
+        <strong>
+            {{ wallet_address }}
+        </strong>
+    </div>
+
+    <div class="detail">
+        <label>Current Balance</label>
+        <strong>
+            {{ balance|floatformat:2 }} USDT
+        </strong>
+    </div>
+
+    <div class="detail">
+        <label>Remaining Balance After Withdrawal</label>
+        <strong class="amount">
+            {{ remaining_balance|floatformat:2 }} USDT
+        </strong>
+    </div>
+
+    <div class="warning">
+        ⚠ Please verify the amount and wallet address before confirming.
+        Once submitted, your withdrawal request will be sent to the admin
+        for approval.
+    </div>
+
+    <div class="buttons">
+
+        <form method="POST" action="{% url 'cancel_withdraw' %}" style="width:100%;">
+            {% csrf_token %}
+            <button type="submit" class="cancel">
+                Cancel
+            </button>
+        </form>
+
+        <form method="POST" action="{% url 'withdraw_confirm' %}" style="width:100%;">
+            {% csrf_token %}
+            <button type="submit" class="confirm">
+                Confirm Withdrawal
+            </button>
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

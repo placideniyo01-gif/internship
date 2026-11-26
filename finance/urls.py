@@ -1,3 +1,4 @@
+
 from django.urls import path
 from . import views
 
@@ -19,6 +20,18 @@ urlpatterns = [
         "withdraw/",
         views.withdraw,
         name="withdraw"
+    ),
+
+    path(
+        "withdraw/confirm/",
+        views.withdraw_confirm,
+        name="withdraw_confirm"
+    ),
+
+    path(
+        "withdraw/cancel/",
+        views.cancel_withdraw,
+        name="cancel_withdraw"
     ),
 
     path(
