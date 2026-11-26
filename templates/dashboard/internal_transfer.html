@@ -1,0 +1,86 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Internal Transfer</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        .transfer-container {
+            max-width: 430px;
+            margin: 40px auto;
+            padding: 25px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 5px 25px rgba(0,0,0,.08);
+        }
+        .transfer-container input {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0 18px;
+            border: 1px solid #ddd;
+            border-radius: 9px;
+            box-sizing: border-box;
+        }
+        .transfer-container button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 9px;
+            background: #087f5b;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .transfer-container label {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="transfer-container">
+
+    <h2>Internal Transfer</h2>
+    <p>Send USDT instantly to another Internship Saving user.</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p class="{{ message.tags }}">{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Recipient Username</label>
+        <input
+            type="text"
+            name="username"
+            placeholder="Enter recipient username"
+            required
+        >
+
+        <label>Amount (USDT)</label>
+        <input
+            type="number"
+            name="amount"
+            placeholder="0.00"
+            min="0.01"
+            step="0.01"
+            required
+        >
+
+        <button type="submit">Send</button>
+    </form>
+
+    <p style="text-align:center;margin-top:20px;">
+        <a href="{% url 'dashboard' %}">Back to Dashboard</a>
+    </p>
+
+</div>
+
+</body>
+</html>

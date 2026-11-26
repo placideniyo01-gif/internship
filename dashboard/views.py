@@ -3,21 +3,24 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.http import JsonResponse
 from decimal import Decimal
-from accounts.models import EmailOTP
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import update_session_auth_hash
 from datetime import timedelta
 from django.views.decorators.http import require_POST
 from django.contrib import messages
-
+from django.contrib.auth.hashers import check_password
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError
+from decimal import Decimal, InvalidOperation
+from finance.models import InternshipTransfer
 from accounts.interest import (
     settle_interest,
     get_current_interest,
     get_interest_per_second
 )
-from accounts.utils import send_otp_email  # niba ihari
-from accounts.utils import send_password_otp
 from django.contrib import messages
 from support.models import SupportMessage
-from accounts.models import EmailOTP
 from accounts.models import (
     Profile,
     InterestWallet,
@@ -150,6 +153,19 @@ def dashboard(request):
         seen=False
     ).count()
 
+    unread_sent_transfers = InternshipTransfer.objects.filter(
+        user=request.user,
+        receiver__isnull=False,
+        status="SUCCESS",
+        seen_by_sender=False
+    ).select_related("receiver").order_by("-created_at")
+
+    unread_received_transfers = InternshipTransfer.objects.filter(
+        receiver=request.user,
+        status="SUCCESS",
+        seen_by_receiver=False
+    ).select_related("user").order_by("-created_at")
+
     context = {
 
         "username": request.user.username,
@@ -169,7 +185,8 @@ def dashboard(request):
         "referrals": referrals_count,
 
         "active_bonus": round(active_bonus, 6),
-
+        "unread_sent_transfers": unread_sent_transfers,
+        "unread_received_transfers": unread_received_transfers,
         "locked_bonus": round(locked_bonus, 6),
 
         "referral_profit": round(referral_profit, 6),
@@ -414,122 +431,56 @@ def settings_view(request):
 from django.contrib.auth.hashers import check_password
 import random
 
+
 @login_required
 def change_password(request):
 
     if request.method == "POST":
-        amount = request.POST.get('amount', 0)
-        wallet_address = request.POST.get('wallet_address')
-        current = request.POST.get(
-            "current_password"
+
+        current_password = request.POST.get("current_password", "")
+        new_password = request.POST.get("new_password", "")
+        confirm_password = request.POST.get("confirm_password", "")
+
+        if not request.user.check_password(current_password):
+            messages.error(request, "Current password is incorrect.")
+            return redirect("change_password")
+
+        if new_password != confirm_password:
+            messages.error(request, "New passwords do not match.")
+            return redirect("change_password")
+
+        if current_password == new_password:
+            messages.error(request, "New password must be different.")
+            return redirect("change_password")
+
+        try:
+            validate_password(new_password, request.user)
+
+        except ValidationError as error:
+            for message in error.messages:
+                messages.error(request, message)
+
+            return redirect("change_password")
+
+        # Save the new password securely in the database
+        request.user.set_password(new_password)
+        request.user.save()
+
+        # Keep the user logged in
+        update_session_auth_hash(request, request.user)
+
+        messages.success(
+            request,
+            "Password changed successfully!"
         )
 
-        new = request.POST.get(
-            "new_password"
-        )
-
-        if not request.user.check_password(current):
-
-            messages.error(
-                request,
-                "Current password incorrect"
-            )
-
-            return redirect(
-                "change_password"
-            )
-
-        otp = str(
-            random.randint(
-                100000,
-                999999
-            )
-        )
-
-        EmailOTP.objects.create(
-            user=request.user,
-            otp=otp
-        )
-
-        request.session[
-            "new_password"
-        ] = new
-
-        send_password_otp(
-            request.user.email,
-            otp
-        )
-
-        return redirect(
-            "verify_password_otp"
-        )
+        return redirect("settings")
 
     return render(
         request,
         "dashboard/change_password.html"
     )
 
-@login_required
-def verify_password_otp(request):
-
-    if request.method == "POST":
-
-        otp = request.POST.get(
-            "otp"
-        )
-
-        obj = EmailOTP.objects.filter(
-            user=request.user,
-            otp=otp,
-            verified=False
-        ).last()
-
-        if not obj:
-
-            messages.error(
-                request,
-                "Invalid OTP"
-            )
-
-            return redirect(
-                "verify_password_otp"
-            )
-
-        if obj.is_expired():
-
-            messages.error(
-                request,
-                "OTP expired"
-            )
-
-            return redirect(
-                "change_password"
-            )
-
-        request.user.set_password(
-            request.session[
-                "new_password"
-            ]
-        )
-
-        request.user.save()
-
-        obj.verified = True
-        obj.save()
-
-        messages.success(
-            request,
-            "Password changed successfully"
-        )
-
-        return redirect(
-            "login"
-        )
-
-    return render(
-        request,
-        "dashboard/verify_password.html"
-    )
 
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -641,3 +592,155 @@ def check_username_api(request):
         "names": user.get_full_name() or user.username
 
     })
+@login_required
+def internal_transfer(request):
+
+    if request.method == "POST":
+
+        username = request.POST.get("username", "").strip()
+        amount_input = request.POST.get("amount", "").strip()
+
+        receiver = User.objects.filter(
+            username__iexact=username,
+            is_active=True
+        ).first()
+
+        if not receiver:
+            messages.error(request, "Recipient username was not found.")
+            return redirect("internal_transfer")
+
+        if receiver.pk == request.user.pk:
+            messages.error(request, "You cannot transfer money to yourself.")
+            return redirect("internal_transfer")
+
+        try:
+            amount = Decimal(amount_input)
+
+            if not amount.is_finite() or amount <= 0:
+                raise InvalidOperation
+
+            if amount.as_tuple().exponent < -2:
+                raise InvalidOperation
+
+        except (InvalidOperation, ValueError):
+            messages.error(request, "Enter a valid amount with a maximum of 2 decimal places.")
+            return redirect("internal_transfer")
+
+        profile = Profile.objects.get(user=request.user)
+
+        if amount > profile.balance:
+            messages.error(request, "Insufficient balance.")
+            return redirect("internal_transfer")
+
+        # Keep transfer details temporarily in the session.
+        request.session["pending_internal_transfer"] = {
+            "receiver_id": receiver.pk,
+            "receiver_username": receiver.username,
+            "amount": str(amount),
+        }
+
+        request.session.set_expiry(600)
+
+        return render(
+            request,
+            "dashboard/transfer_confirm.html",
+            {
+                "receiver": receiver,
+                "amount": amount,
+            }
+        )
+
+    return render(
+        request,
+        "dashboard/internal_transfer.html"
+    )
+
+
+@login_required
+@require_POST
+def confirm_internal_transfer(request):
+
+    pending = request.session.get(
+        "pending_internal_transfer"
+    )
+
+    if not pending:
+        messages.error(request, "Transfer session expired. Please try again.")
+        return redirect("internal_transfer")
+
+    password = request.POST.get("password", "")
+
+    if not check_password(password, request.user.password):
+        messages.error(request, "Incorrect password. Transfer was not completed.")
+        return redirect("internal_transfer")
+
+    try:
+        receiver = User.objects.get(
+            pk=pending["receiver_id"],
+            username=pending["receiver_username"],
+            is_active=True
+        )
+
+        amount = Decimal(pending["amount"])
+
+        if receiver.pk == request.user.pk or amount <= 0:
+            raise ValueError
+
+        with transaction.atomic():
+
+            # Settle interest for both accounts before changing balances.
+            # Lock users in a consistent order.
+            users = sorted(
+                [request.user, receiver],
+                key=lambda user: user.pk
+            )
+
+            for account_user in users:
+                settle_interest(account_user, timezone.now())
+
+            # Lock both profiles before updating either balance.
+            profiles = {
+                profile.user_id: profile
+                for profile in Profile.objects.select_for_update()
+                .filter(user__in=users)
+                .order_by("user_id")
+            }
+
+            sender_profile = profiles[request.user.pk]
+            receiver_profile = profiles[receiver.pk]
+
+            if sender_profile.balance < amount:
+                raise ValueError("Insufficient balance.")
+
+            sender_profile.balance -= amount
+            receiver_profile.balance += amount
+
+            sender_profile.save(update_fields=["balance"])
+            receiver_profile.save(update_fields=["balance"])
+
+        InternshipTransfer.objects.create(
+            user=request.user,
+            receiver=receiver,
+            receiver_username=receiver.username,
+            amount=amount,
+            status="SUCCESS",
+            seen_by_sender=False,
+            seen_by_receiver=False
+        )
+
+        request.session.pop("pending_internal_transfer", None)
+
+        messages.success(
+            request,
+            f"Successfully sent {amount:.2f} USDT to {receiver.username}."
+        )
+
+        return redirect("dashboard")
+
+    except User.DoesNotExist:
+        messages.error(request, "Recipient account no longer exists.")
+
+    except (ValueError, KeyError, InvalidOperation):
+        messages.error(request, "Transfer could not be completed. Please check your balance and try again.")
+
+    return redirect("internal_transfer")

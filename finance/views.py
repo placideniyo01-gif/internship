@@ -1,56 +1,22 @@
-from django.shortcuts import render
-from django.shortcuts import redirect
-
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from accounts.interest import settle_interest
-from .models import Deposit
-from django.http import HttpResponse
 from django.contrib import messages
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
+from django.conf import settings
 
+from decimal import Decimal
+from datetime import timedelta
+import json
 
-@login_required
-def deposit(request):
+from accounts.interest import settle_interest
+from accounts.models import Profile, Referral
 
-    if request.method == "POST":
-
-        amount = float(
-            request.POST.get("amount")
-        )
-
-        if amount < 5:
-
-            messages.error(
-                request,
-                "Minimum deposit is 5 USDT."
-            )
-
-            return redirect(
-                "deposit"
-            )
-
-        proof = request.FILES.get(
-            "proof"
-        )
-
-        Deposit.objects.create(
-            user=request.user,
-            amount=amount,
-            proof=proof
-        )
-
-        messages.success(
-            request,
-            "Deposit submitted successfully."
-        )
-
-        return redirect(
-            "deposit_history"
-        )
-
-    return render(
-        request,
-        "finance/deposit.html"
-    )
+from .models import Deposit, Withdrawal, InternshipTransfer
+from .forms import WithdrawalForm
+from decimal import Decimal, InvalidOperation
 
 from .models import (
     Deposit,
@@ -63,47 +29,84 @@ import logging
 logger = logging.getLogger(__name__)
 
 @login_required
-def deposit_history(request):
+def deposit(request):
 
-    try:
+    if request.method == "POST":
 
-        deposits = Deposit.objects.filter(
-            user=request.user
-        ).order_by("-created_at")
+        try:
+            amount = Decimal(
+                request.POST.get("amount", "0")
+            )
+        except (InvalidOperation, TypeError, ValueError):
 
-        withdrawals = Withdrawal.objects.filter(
-            user=request.user
-        ).order_by("-created_at")
+            messages.error(
+                request,
+                "Please enter a valid deposit amount."
+            )
 
-        internship_transfers = InternshipTransfer.objects.filter(
-            user=request.user
-        ).order_by("-created_at")
+            return redirect("deposit")
 
-        import logging
-        logger = logging.getLogger(__name__)
+        if not amount.is_finite() or amount < Decimal("25"):
 
-        logger.error(
-            f"CURRENT USER: {request.user.username}"
+            messages.error(
+                request,
+                "Minimum deposit is 25 USDT."
+            )
+
+            return redirect("deposit")
+
+        proof = request.FILES.get("proof")
+
+        if not proof:
+            messages.error(
+                request,
+                "Please upload your deposit proof."
+            )
+            return redirect("deposit")
+
+        Deposit.objects.create(
+            user=request.user,
+            amount=amount,
+            proof=proof
         )
 
-        logger.error(
-            f"USER TRANSFERS: {InternshipTransfer.objects.filter(user=request.user).count()}"
-        )
-        return render(
+        messages.success(
             request,
-            "finance/deposit_history.html",
-            {
-                "deposits": deposits,
-                "withdrawals": withdrawals,
-                "internship_transfers": internship_transfers,
-            }
+            "Deposit submitted successfully."
         )
 
-    except Exception as e:
+        return redirect("deposit_history")
 
-        logger.exception(e)
+    return render(
+        request,
+        "finance/deposit.html"
+    )
 
-        return HttpResponse(str(e))
+@login_required
+def deposit_history(request):
+    deposits = Deposit.objects.filter(
+        user=request.user
+    ).order_by("-created_at")
+
+    withdrawals = Withdrawal.objects.filter(
+        user=request.user
+    ).order_by("-created_at")
+
+    sent_internal_transfers = InternshipTransfer.objects.filter(
+        user=request.user,
+        receiver__isnull=False
+    ).select_related("receiver").order_by("-created_at")
+
+    received_internal_transfers = InternshipTransfer.objects.filter(
+        receiver=request.user
+    ).select_related("user").order_by("-created_at")
+
+    return render(request, "finance/deposit_history.html", {
+        "deposits": deposits,
+        "withdrawals": withdrawals,
+        "sent_internal_transfers": sent_internal_transfers,
+        "received_internal_transfers": received_internal_transfers,
+    })
 
 from decimal import Decimal
 from datetime import timedelta
@@ -171,11 +174,11 @@ def withdraw(request):
 
             if active_referrals < 2:
 
-                if amount < Decimal("20"):
+                if amount < Decimal("50"):
 
                     form.add_error(
                         "amount",
-                        "Minimum withdrawal is 20 USDT."
+                        "Minimum withdrawal is 50 USDT."
                     )
 
                     return render(

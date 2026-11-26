@@ -149,7 +149,16 @@ class InternshipTransfer(models.Model):
 
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="sent_internship_transfers"
+    )
+
+    receiver = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="received_internship_transfers",
+        null=True,
+        blank=True
     )
 
     receiver_username = models.CharField(
@@ -167,6 +176,9 @@ class InternshipTransfer(models.Model):
         default="SUCCESS"
     )
 
+    seen_by_receiver = models.BooleanField(default=False)
+    seen_by_sender = models.BooleanField(default=False)
+    
     created_at = models.DateTimeField(
         auto_now_add=True
     )

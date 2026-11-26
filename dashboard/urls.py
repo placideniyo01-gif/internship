@@ -12,7 +12,17 @@ urlpatterns = [
     path("live-balance/", views.live_balance, name="live_balance"),
 
     path("claim-referral-bonus/", views.claim_bonus, name="claim_referral_bonus"),
+    path(
+        "transfer/",
+        views.internal_transfer,
+        name="internal_transfer"
+    ),
 
+    path(
+        "transfer/confirm/",
+        views.confirm_internal_transfer,
+        name="confirm_internal_transfer"
+    ),
     path(
         "settings/",
         views.settings_view,
@@ -23,12 +33,6 @@ urlpatterns = [
         "change-password/",
         views.change_password,
         name="change_password"
-    ),
-
-    path(
-        "verify-password-otp/",
-        views.verify_password_otp,
-        name="verify_password_otp"
     ),
 
     path(
