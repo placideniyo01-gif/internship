@@ -45,6 +45,16 @@
         </div>
     </div>
 
+{% if messages %}
+    <div id="dashboard-messages">
+        {% for message in messages %}
+            <div class="dashboard-message {{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
     <!-- ACTION BUTTONS -->
     <div class="action-row">
 
@@ -272,79 +282,70 @@ function copyLink() {
 <!-- LIVE DASHBOARD AND INTEREST -->
 <script>
 
-let interest = parseFloat("{{ interest }}") || 0;
 
-let ratePerSecond =
-    parseFloat("{{ interest_rate_per_second }}") || 0;
+let interest = Number("{{ interest|default:'0' }}");
+let ratePerSecond = Number("{{ interest_rate_per_second|default:'0' }}");
 
 const interestElement = document.getElementById("interest");
 
-
-function displayInterest() {
-
-    interestElement.innerText =
-        "$" + interest.toFixed(8);
-
+function safeNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
 }
 
+function money(value) {
+    return "$" + safeNumber(value).toFixed(8);
+}
+
+function displayInterest() {
+    interestElement.innerText = money(interest);
+}
 
 // Count interest every second
 setInterval(() => {
-
     interest += ratePerSecond;
-
     displayInterest();
-
 }, 1000);
 
-
-// Update dashboard from server
+// Get fresh values from Django
 async function updateDashboard() {
-
     try {
+        const response = await fetch("/dashboard/live-balance/");
 
-        const response = await fetch(
-            "/dashboard/live-balance/"
-        );
-
-        if (!response.ok) {
-            return;
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
 
         document.getElementById("balance").innerText =
-            "$" + data.balance.toFixed(8);
+            money(data.balance);
 
-        interest = data.interest;
+        interest = safeNumber(data.interest);
 
-        // Update rate after deposit or balance change
-        ratePerSecond = data.interest_rate_per_second;
+        ratePerSecond = safeNumber(
+            data.interest_rate_per_second
+        );
 
         displayInterest();
 
         document.getElementById("active_bonus").innerText =
-            "$" + data.active_bonus.toFixed(8);
+            money(data.active_bonus);
 
         document.getElementById("locked_bonus").innerText =
-            "$" + data.locked_bonus.toFixed(8);
+            money(data.locked_bonus);
 
         document.getElementById("referral_profit").innerText =
-            "$" + data.referral_profit.toFixed(8);
+            money(data.referral_profit);
 
     } catch (error) {
-
         console.log("Dashboard update error:", error);
-
     }
-
 }
 
-
-// Update immediately and every 30 seconds
+displayInterest();
 updateDashboard();
 
-setInterval(updateDashboard, 30000);
+// Synchronize with server every 5 seconds
+setInterval(updateDashboard, 5000);
 
 </script>
 

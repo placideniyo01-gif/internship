@@ -259,10 +259,10 @@ def claim_bonus(request):
     )
 
 
+
 @login_required
 @require_POST
 def claim_interest(request):
-
     now = timezone.now()
 
     profile, wallet = settle_interest(
@@ -270,18 +270,28 @@ def claim_interest(request):
         now
     )
 
-    # Check 7-day cooldown
+    # Check the 7-day claim period
     if wallet.last_claim_at:
-
         next_claim_at = (
             wallet.last_claim_at + timedelta(days=7)
         )
 
         if now < next_claim_at:
+            remaining_seconds = int(
+                (next_claim_at - now).total_seconds()
+            )
+
+            days, remainder = divmod(remaining_seconds, 86400)
+            hours, remainder = divmod(remainder, 3600)
+            minutes, seconds = divmod(remainder, 60)
 
             messages.error(
                 request,
-                "You can claim interest only once every 7 days."
+                (
+                    f"You can claim interest again in "
+                    f"{days} days, {hours} hours, "
+                    f"{minutes} minutes and {seconds} seconds."
+                )
             )
 
             return redirect("dashboard")
@@ -289,52 +299,42 @@ def claim_interest(request):
     total_interest = wallet.amount
 
     if total_interest <= 0:
-
         messages.error(
             request,
             "You do not have interest available to claim yet."
         )
-
         return redirect("dashboard")
 
-    # Add interest to the user's balance
     profile.balance += total_interest
     profile.total_earned += total_interest
 
-    profile.save(
-        update_fields=[
-            "balance",
-            "total_earned"
-        ]
-    )
+    profile.save(update_fields=[
+        "balance",
+        "total_earned"
+    ])
 
-    # Reset accrued interest and start a new claim period
     wallet.amount = Decimal("0")
     wallet.last_update = now
     wallet.last_claim_at = now
 
-    wallet.save(
-        update_fields=[
-            "amount",
-            "last_update",
-            "last_claim_at"
-        ]
-    )
+    wallet.save(update_fields=[
+        "amount",
+        "last_update",
+        "last_claim_at"
+    ])
 
     messages.success(
         request,
-        "Interest claimed successfully. Your new balance is now earning interest."
+        "Interest claimed successfully! Your new balance is now earning interest."
     )
 
     return redirect("dashboard")
 
 
+
 @login_required
 def live_balance(request):
-
-    profile = Profile.objects.get(
-        user=request.user
-    )
+    profile = Profile.objects.get(user=request.user)
 
     wallet, created = InterestWallet.objects.get_or_create(
         user=request.user
@@ -348,6 +348,11 @@ def live_balance(request):
         now
     )
 
+    interest_per_second = get_interest_per_second(
+        profile,
+        wallet
+    )
+
     active_bonus = Decimal("0")
     locked_bonus = Decimal("0")
     referral_profit = Decimal("0")
@@ -357,37 +362,22 @@ def live_balance(request):
     )
 
     for d in deposits:
-
         elapsed_seconds = (
             now - d.started_at
         ).total_seconds()
 
-        days = Decimal(
-            str(elapsed_seconds / 86400)
-        )
+        days = Decimal(str(elapsed_seconds / 86400))
 
         total_bonus_generated = (
-            d.deposit_amount *
-            d.bonus_rate *
-            days
+            d.deposit_amount * d.bonus_rate * min(days, Decimal("90"))
         )
-
-        if days > 90:
-            total_bonus_generated = (
-                d.deposit_amount *
-                d.bonus_rate *
-                Decimal("90")
-            )
 
         referral_profit += total_bonus_generated
 
-        available_bonus = (
-            total_bonus_generated -
-            d.claimed_bonus
+        available_bonus = max(
+            total_bonus_generated - d.claimed_bonus,
+            Decimal("0")
         )
-
-        if available_bonus < 0:
-            available_bonus = Decimal("0")
 
         if days >= 30:
             active_bonus += available_bonus
@@ -395,18 +385,14 @@ def live_balance(request):
             locked_bonus += available_bonus
 
     return JsonResponse({
-
         "balance": float(profile.balance),
-
         "interest": float(current_interest),
-
+        "interest_rate_per_second": float(interest_per_second),
         "active_bonus": float(active_bonus),
-
         "locked_bonus": float(locked_bonus),
-
-        "referral_profit": float(referral_profit)
-
+        "referral_profit": float(referral_profit),
     })
+
 
 
 @login_required
