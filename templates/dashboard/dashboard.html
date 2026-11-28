@@ -6,13 +6,11 @@
 
 <head>
     <meta charset="UTF-8">
-
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
     <title>Treasury Dashboard</title>
-
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
     <style>
@@ -70,7 +68,43 @@
         .settings-btn {
             text-decoration: none;
         }
+
+        /* SUPPORT BUTTON - RIGHT BOTTOM */
+        .support-btn {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 9999;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+
+            padding: 13px 20px;
+            background: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+
+        .support-btn:hover {
+            background: #0056b3;
+        }
+
+        @media (max-width: 600px) {
+            .support-btn {
+                right: 15px;
+                bottom: 15px;
+                padding: 12px 17px;
+            }
+        }
     </style>
+
 </head>
 
 <body>
@@ -85,7 +119,6 @@
         </a>
 
         <h3>Hello</h3>
-
         <h1>{{ username|upper }}</h1>
 
     </div>
@@ -152,21 +185,6 @@
             </button>
         </a>
 
-        <!-- SUPPORT -->
-        <a href="/support/" class="support-btn">
-
-            Support
-
-            <span
-                id="supportBadge"
-                class="support-badge"
-                style="display:{% if unread_support > 0 %}inline-block{% else %}none{% endif %};"
-            >
-                {{ unread_support|default:"0" }}
-            </span>
-
-        </a>
-
     </div>
 
 
@@ -231,7 +249,6 @@
             <div class="box">
 
                 <h3>👥 Referrals</h3>
-
                 <h2>{{ referrals }}</h2>
 
             </div>
@@ -246,11 +263,9 @@
                 </h2>
 
                 <a href="{% url 'claim_referral_bonus' %}">
-
                     <button class="claim-small" type="button">
                         Claim
                     </button>
-
                 </a>
 
             </div>
@@ -465,7 +480,6 @@ function displayInterest() {
 setInterval(function () {
 
     interest += ratePerSecond;
-
     displayInterest();
 
 }, 1000);
@@ -515,7 +529,6 @@ async function updateDashboard() {
 }
 
 displayInterest();
-
 updateDashboard();
 
 
@@ -555,13 +568,11 @@ function refreshSupportBadge() {
         if (count > 0) {
 
             badge.style.display = "inline-block";
-
             badge.innerText = count;
 
         } else {
 
             badge.style.display = "none";
-
             badge.innerText = "";
 
         }
@@ -581,6 +592,22 @@ refreshSupportBadge();
 setInterval(refreshSupportBadge, 30000);
 
 </script>
+
+
+<!-- FIXED SUPPORT BUTTON - RIGHT BOTTOM -->
+<a href="/support/" class="support-btn">
+
+    💬 Support
+
+    <span
+        id="supportBadge"
+        class="support-badge"
+        style="display:{% if unread_support > 0 %}inline-block{% else %}none{% endif %};"
+    >
+        {{ unread_support|default:"0" }}
+    </span>
+
+</a>
 
 
 </body>
