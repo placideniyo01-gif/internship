@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-jbml&s=o(+5@r9jerh!^#cb25g-_=04my1e9yzibcplb7d$vp='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -43,7 +43,7 @@ INSTALLED_APPS = [
 
     'accounts',
     'dashboard',
-    'finance',
+    'finance.apps.FinanceConfig',
     'support',
     'channels',
 ]

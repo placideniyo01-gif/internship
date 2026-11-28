@@ -53,4 +53,9 @@ urlpatterns = [
         views.check_username_api,
         name="check_username_api"
     ),
+    path(
+        "block-amount/",
+        views.block_amount,
+        name="block_amount"
+    ),    
 ]

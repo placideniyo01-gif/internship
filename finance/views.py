@@ -131,15 +131,20 @@ def deposit_history(request):
 
 # =====================================================
 # WITHDRAWAL VALIDATION
+# Available Balance ONLY
 # =====================================================
 
-def validate_withdrawal_request(user, amount):
+def validate_withdrawal_request(user, amount, settle=True):
 
     if not amount.is_finite() or amount <= Decimal("0"):
         return "Please enter a valid withdrawal amount."
 
     if amount != amount.quantize(Decimal("0.01")):
         return "Amount cannot have more than 2 decimal places."
+
+    # Unlock expired blocked funds before checking balance.
+    if settle:
+        settle_interest(user, timezone.now())
 
     active_referrals = Referral.objects.filter(
         referrer=user,
@@ -154,6 +159,7 @@ def validate_withdrawal_request(user, amount):
     ).order_by("-created_at").first()
 
     if last_withdrawal:
+
         next_date = last_withdrawal.created_at + timedelta(days=7)
 
         if timezone.now() < next_date:
@@ -164,20 +170,26 @@ def validate_withdrawal_request(user, amount):
 
     profile = Profile.objects.get(user=user)
 
+    # IMPORTANT:
+    # Only available balance can be withdrawn.
+    # blocked_amount is never included here.
     if amount > profile.balance:
-        return "Insufficient balance."
+        return "Insufficient available balance."
 
     return None
 
 
 # =====================================================
 # WITHDRAWAL FORM
-# This view ONLY prepares the confirmation.
-# It does NOT create a Withdrawal record.
+# Prepares confirmation only.
+# Does NOT create a Withdrawal record.
 # =====================================================
 
 @login_required
 def withdraw(request):
+
+    # Settle interest and unlock expired blocked funds first.
+    settle_interest(request.user, timezone.now())
 
     profile, created = Profile.objects.get_or_create(
         user=request.user
@@ -194,13 +206,15 @@ def withdraw(request):
 
             error = validate_withdrawal_request(
                 request.user,
-                amount
+                amount,
+                settle=False
             )
 
             if error:
                 form.add_error(None, error)
 
             else:
+
                 request.session[PENDING_WITHDRAWAL_SESSION_KEY] = {
                     "amount": str(amount),
                     "wallet_address": wallet_address,
@@ -214,6 +228,9 @@ def withdraw(request):
     else:
         form = WithdrawalForm()
 
+    # Refresh profile after settlement.
+    profile.refresh_from_db()
+
     return render(
         request,
         "finance/withdraw.html",
@@ -226,7 +243,7 @@ def withdraw(request):
 
 # =====================================================
 # WITHDRAWAL CONFIRMATION
-# Creates the request ONLY after Confirm is clicked.
+# Creates request ONLY after Confirm is clicked.
 # =====================================================
 
 @login_required
@@ -254,36 +271,63 @@ def withdraw_confirm(request):
             PENDING_WITHDRAWAL_SESSION_KEY,
             None
         )
+
         messages.error(
             request,
             "Invalid withdrawal confirmation. Please try again."
         )
+
         return redirect("withdraw")
 
-    if timezone.now().timestamp() - created_at > WITHDRAWAL_CONFIRMATION_TIMEOUT:
+    if not amount.is_finite() or amount <= Decimal("0"):
         request.session.pop(
             PENDING_WITHDRAWAL_SESSION_KEY,
             None
         )
+
+        messages.error(
+            request,
+            "Invalid withdrawal amount."
+        )
+
+        return redirect("withdraw")
+
+    if timezone.now().timestamp() - created_at > WITHDRAWAL_CONFIRMATION_TIMEOUT:
+
+        request.session.pop(
+            PENDING_WITHDRAWAL_SESSION_KEY,
+            None
+        )
+
         messages.error(
             request,
             "Withdrawal confirmation expired. Please submit again."
         )
+
         return redirect("withdraw")
 
-    profile = Profile.objects.get(user=request.user)
+    # Settle before displaying confirmation.
+    settle_interest(request.user, timezone.now())
+
+    profile = Profile.objects.get(
+        user=request.user
+    )
 
     error = validate_withdrawal_request(
         request.user,
-        amount
+        amount,
+        settle=False
     )
 
     if error:
+
         request.session.pop(
             PENDING_WITHDRAWAL_SESSION_KEY,
             None
         )
+
         messages.error(request, error)
+
         return redirect("withdraw")
 
     remaining_balance = profile.balance - amount
@@ -292,33 +336,47 @@ def withdraw_confirm(request):
 
         with transaction.atomic():
 
+            # Settle any expired block before checking the balance.
+            settle_interest(
+                request.user,
+                timezone.now()
+            )
+
             locked_profile = Profile.objects.select_for_update().get(
                 user=request.user
             )
 
-            # Recheck balance and withdrawal rules at confirmation time.
+            # Recheck withdrawal rules at confirmation time.
             error = validate_withdrawal_request(
                 request.user,
-                amount
+                amount,
+                settle=False
             )
 
             if error:
+
                 request.session.pop(
                     PENDING_WITHDRAWAL_SESSION_KEY,
                     None
                 )
+
                 messages.error(request, error)
+
                 return redirect("withdraw")
 
+            # Final balance check using Available Balance only.
             if amount > locked_profile.balance:
+
                 request.session.pop(
                     PENDING_WITHDRAWAL_SESSION_KEY,
                     None
                 )
+
                 messages.error(
                     request,
-                    "Insufficient balance."
+                    "Insufficient available balance."
                 )
+
                 return redirect("withdraw")
 
             Withdrawal.objects.create(
@@ -340,6 +398,11 @@ def withdraw_confirm(request):
 
         return redirect("dashboard")
 
+    # Refresh values for confirmation page.
+    profile.refresh_from_db()
+
+    remaining_balance = profile.balance - amount
+
     return render(
         request,
         "finance/withdraw_confirm.html",
@@ -354,7 +417,6 @@ def withdraw_confirm(request):
 
 # =====================================================
 # CANCEL WITHDRAWAL CONFIRMATION
-# No Withdrawal record is created.
 # =====================================================
 
 @login_required
@@ -376,6 +438,7 @@ def cancel_withdraw(request):
 
 # =====================================================
 # EXTERNAL WALLET TRANSFER API
+# Credits Available Balance only.
 # =====================================================
 
 @csrf_exempt
@@ -384,6 +447,15 @@ def receive_wallet_transfer(request):
 
     try:
         data = json.loads(request.body)
+
+        if not isinstance(data, dict):
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Invalid request data."
+                },
+                status=400
+            )
 
         api_secret = getattr(
             settings,
@@ -415,6 +487,7 @@ def receive_wallet_transfer(request):
             amount = Decimal(
                 str(data.get("amount", ""))
             )
+
         except (InvalidOperation, TypeError, ValueError):
             return JsonResponse(
                 {
@@ -457,6 +530,7 @@ def receive_wallet_transfer(request):
 
         with transaction.atomic():
 
+            # Settle expired blocks first.
             settle_interest(
                 user,
                 timezone.now()
@@ -466,8 +540,13 @@ def receive_wallet_transfer(request):
                 user=user
             )
 
+            # External transfer increases available balance.
+            # It does not increase blocked amount.
             profile.balance += amount
-            profile.save(update_fields=["balance"])
+
+            profile.save(
+                update_fields=["balance"]
+            )
 
             InternshipTransfer.objects.create(
                 user=user,

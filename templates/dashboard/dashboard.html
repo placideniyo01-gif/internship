@@ -5,18 +5,15 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
     <title>Treasury Dashboard</title>
 
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
     <style>
+        /* DASHBOARD MESSAGES */
 
         .dashboard-message {
             padding: 13px 16px;
@@ -73,6 +70,501 @@
             text-decoration: none;
         }
 
+        /* AVAILABLE BALANCE */
+
+        .balance-card {
+            position: relative;
+        }
+
+        .balance-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .balance-top-row h4 {
+            margin: 0;
+        }
+
+        .block-open-btn {
+            border: 1px solid rgba(255, 255, 255, .35);
+            background: rgba(255, 255, 255, .12);
+            color: white;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .block-open-btn:active {
+            transform: scale(.96);
+        }
+
+        .balance-label {
+            font-size: 12px;
+            opacity: .75;
+            margin-top: 5px;
+        }
+
+        /* BLOCKED AMOUNT */
+
+        .blocked-card {
+            margin-top: 14px;
+            padding: 17px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #102a50, #173d65);
+            border: 1px solid rgba(255, 255, 255, .10);
+            color: white;
+        }
+
+        .blocked-card h4 {
+            margin: 0 0 9px;
+            font-size: 14px;
+        }
+
+        .blocked-amount {
+            font-size: 23px;
+            font-weight: 800;
+            margin: 5px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .blocked-description {
+            font-size: 12px;
+            opacity: .75;
+            margin-top: 5px;
+        }
+
+        .unlock-info {
+            margin-top: 12px;
+            padding-top: 11px;
+            border-top: 1px solid rgba(255, 255, 255, .13);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .unlock-countdown {
+            color: #55e6a5;
+            font-weight: 700;
+        }
+
+        /* BLOCK FORM */
+
+        .block-panel {
+            display: none;
+            margin-top: 14px;
+            padding: 17px;
+            border-radius: 15px;
+            background: #102443;
+            border: 1px solid rgba(255, 255, 255, .12);
+            color: white;
+        }
+
+        .block-panel.show {
+            display: block;
+        }
+
+        .block-panel h3 {
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+
+        .block-panel p {
+            font-size: 12px;
+            line-height: 1.6;
+            opacity: .8;
+            margin-bottom: 12px;
+        }
+
+        .block-panel input {
+            width: 100%;
+            padding: 13px;
+            border-radius: 9px;
+            border: 1px solid #45617f;
+            background: #07172d;
+            color: white;
+            outline: none;
+            font-size: 15px;
+            margin-bottom: 12px;
+        }
+
+        .block-panel input:focus {
+            border-color: #35a7ff;
+        }
+
+        .block-action-row {
+            display: flex;
+            gap: 9px;
+        }
+
+        .block-action-row button {
+            flex: 1;
+            padding: 11px;
+            border: none;
+            border-radius: 9px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .block-continue {
+            background: #1688e8;
+            color: white;
+        }
+
+        .block-cancel {
+            background: #34465c;
+            color: white;
+        }
+
+        .block-confirmation {
+            display: none;
+            margin-top: 12px;
+            padding: 13px;
+            border-radius: 10px;
+            background: rgba(0, 210, 106, .10);
+            border: 1px solid rgba(0, 210, 106, .35);
+        }
+
+        .block-confirmation.show {
+            display: block;
+        }
+
+        .block-confirmation p {
+            margin: 0 0 12px;
+        }
+
+        .block-confirm-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 9px;
+            background: #00a86b;
+            color: white;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .block-warning {
+            font-size: 11px;
+            opacity: .7;
+            margin-top: 12px;
+            line-height: 1.6;
+        }
+
+        /* =====================================
+           ANNOUNCEMENT POPUP
+        ===================================== */
+
+        .announcement-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+
+            align-items: center;
+            justify-content: center;
+
+            padding: 15px;
+
+            background: rgba(10, 15, 30, .70);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+        }
+
+        .announcement-overlay.is-open {
+            display: flex;
+        }
+
+        .announcement-modal {
+            position: relative;
+
+            width: 100%;
+            max-width: 430px;
+
+            height: min(620px, 82vh);
+            max-height: 82vh;
+
+            display: flex;
+            flex-direction: column;
+
+            background: #ffffff;
+            color: #172033;
+
+            border-radius: 6px;
+            overflow: hidden;
+
+            box-shadow: 0 15px 55px rgba(0, 0, 0, .35);
+
+            animation: announcementAppear .25s ease;
+        }
+
+        @keyframes announcementAppear {
+            from {
+                opacity: 0;
+                transform: scale(.94) translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .announcement-header {
+            position: relative;
+            flex-shrink: 0;
+
+            padding: 18px 18px 10px;
+
+            background: #ffffff;
+        }
+
+        .announcement-header h2 {
+            margin: 0;
+            padding-right: 25px;
+
+            color: #26344d;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .announcement-header p {
+            margin: 6px 0 0;
+
+            color: #8992a3;
+            font-size: 11px;
+        }
+
+        .announcement-top-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+
+            width: 23px;
+            height: 23px;
+
+            border: none;
+            border-radius: 50%;
+
+            background: #71608f;
+            color: white;
+
+            font-size: 15px;
+            font-weight: bold;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            cursor: pointer;
+        }
+
+        /* ANNOUNCEMENT BANNER */
+
+        .announcement-banner {
+            flex-shrink: 0;
+
+            margin: 0 12px 10px;
+            min-height: 125px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 13px;
+
+            padding: 15px;
+
+            background: linear-gradient(135deg, #8ac9cc, #65aeb5);
+            color: #ffffff;
+
+            text-align: center;
+        }
+
+        .announcement-megaphone {
+            font-size: 43px;
+            line-height: 1;
+        }
+
+        .announcement-banner h3 {
+            margin: 0;
+            color: white;
+            font-size: 21px;
+            font-weight: 900;
+            line-height: 1.2;
+            letter-spacing: .5px;
+        }
+
+        .announcement-banner span {
+            display: block;
+            margin-top: 6px;
+            color: rgba(255,255,255,.9);
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        /* SCROLL CONTENT */
+
+        .announcement-content {
+            flex: 1;
+            min-height: 0;
+
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+
+            padding: 10px 18px 18px;
+
+            color: #303846;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .announcement-content::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .announcement-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .announcement-content h3 {
+            margin: 17px 0 6px;
+            color: #26344d;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .announcement-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .announcement-content p {
+            margin: 6px 0;
+        }
+
+        .announcement-content ul {
+            padding-left: 19px;
+            margin: 7px 0 12px;
+        }
+
+        .announcement-content li {
+            margin-bottom: 5px;
+        }
+
+        .announcement-note {
+            padding: 10px;
+            margin: 12px 0;
+
+            background: #edf7ff;
+            border-left: 3px solid #2496d5;
+
+            color: #254b69;
+            border-radius: 4px;
+        }
+
+        .announcement-warning {
+            padding: 10px;
+            margin: 12px 0;
+
+            background: #fff6e9;
+            border-left: 3px solid #f0a43b;
+
+            color: #80511d;
+            border-radius: 4px;
+        }
+
+        /* FIXED FOOTER */
+
+        .announcement-footer {
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 11px 18px;
+
+            background: #ffffff;
+            border-top: 1px solid #eeeeee;
+        }
+
+        .announcement-close {
+            border: none;
+            border-radius: 5px;
+
+            padding: 9px 22px;
+
+            background: #263c61;
+            color: #ffffff;
+
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .3px;
+
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .announcement-close:hover {
+            background: #1688e8;
+        }
+
+        .announcement-close:active {
+            transform: scale(.96);
+        }
+
+        @media (max-width: 480px) {
+            .blocked-amount {
+                font-size: 21px;
+            }
+
+            .block-open-btn {
+                padding: 7px 11px;
+            }
+
+            .announcement-overlay {
+                padding: 18px;
+            }
+
+            .announcement-modal {
+                max-width: 360px;
+                height: min(570px, 78vh);
+                max-height: 78vh;
+            }
+
+            .announcement-header {
+                padding: 16px 16px 9px;
+            }
+
+            .announcement-header h2 {
+                font-size: 15px;
+            }
+
+            .announcement-banner {
+                min-height: 110px;
+            }
+
+            .announcement-banner h3 {
+                font-size: 18px;
+            }
+
+            .announcement-megaphone {
+                font-size: 35px;
+            }
+
+            .announcement-content {
+                padding: 10px 16px 16px;
+                font-size: 11px;
+            }
+
+            .announcement-footer {
+                padding: 10px;
+            }
+        }
     </style>
 
 </head>
@@ -96,18 +588,168 @@
     </div>
 
 
-    <!-- BALANCE -->
+    <!-- AVAILABLE BALANCE -->
 
     <div class="balance-card">
 
-        <h4>Balance</h4>
+        <div class="balance-top-row">
+
+            <h4>Available Balance</h4>
+
+            <button
+                type="button"
+                class="block-open-btn"
+                onclick="openBlockPanel()"
+            >
+                🔒 Block
+            </button>
+
+        </div>
 
         <div class="amount" id="balance">
             ${{ balance }}
         </div>
 
-        <div class="total-balance">
-            Total Balance
+        <div class="balance-label">
+            Available for withdrawal and transfer
+        </div>
+
+    </div>
+
+
+    <!-- BLOCKED AMOUNT -->
+
+    <div class="blocked-card">
+
+        <h4>🔒 Blocked Amount</h4>
+
+        <div class="blocked-amount" id="blockedAmount">
+            ${{ blocked_amount|default:"0.00000000" }}
+        </div>
+
+        <div class="blocked-description">
+            Earns 5% daily interest while blocked
+        </div>
+
+        <div
+            class="unlock-info"
+            id="unlockInfo"
+            {% if not has_active_block %}style="display:none;"{% endif %}
+        >
+
+            <div>
+                Unlock date:
+                <strong id="unlockDate">
+                    {% if block_unlock_at %}
+                        {{ block_unlock_at|date:"d M Y, H:i" }}
+                    {% endif %}
+                </strong>
+            </div>
+
+            <div>
+                Time remaining:
+                <span class="unlock-countdown" id="unlockCountdown">
+                    Calculating...
+                </span>
+            </div>
+
+        </div>
+
+        <div
+            id="noActiveBlock"
+            class="blocked-description"
+            {% if has_active_block %}style="display:none;"{% endif %}
+        >
+            You currently have no blocked funds.
+        </div>
+
+    </div>
+
+
+    <!-- BLOCK AMOUNT FORM -->
+
+    <div class="block-panel" id="blockPanel">
+
+        <h3>Block Your Funds</h3>
+
+        <p>
+            Choose the amount you want to block.
+            Your funds will be locked for 3 calendar months
+            and will earn 5% daily interest.
+        </p>
+
+        <form
+            method="POST"
+            action="{% url 'block_amount' %}"
+            id="blockForm"
+        >
+
+            {% csrf_token %}
+
+            <input
+                type="number"
+                id="blockAmountInput"
+                name="amount"
+                placeholder="Enter amount in USDT"
+                min="0.00000001"
+                step="0.00000001"
+                max="{{ balance }}"
+                required
+            >
+
+            <div class="block-action-row">
+
+                <button
+                    type="button"
+                    class="block-continue"
+                    onclick="showBlockConfirmation()"
+                >
+                    Continue
+                </button>
+
+                <button
+                    type="button"
+                    class="block-cancel"
+                    onclick="closeBlockPanel()"
+                >
+                    Cancel
+                </button>
+
+            </div>
+
+            <div class="block-confirmation" id="blockConfirmation">
+
+                <p>
+                    You are about to block
+                    <strong id="confirmBlockAmount"></strong> USDT
+                    for 3 months at 5% daily interest.
+                </p>
+
+                <p>
+                    Your Available Balance will decrease,
+                    and your Blocked Amount will increase.
+
+                    {% if has_active_block %}
+                        Your original unlock date will remain unchanged.
+                    {% else %}
+                        Your unlock date will be 3 calendar months from now.
+                    {% endif %}
+                </p>
+
+                <button
+                    type="submit"
+                    class="block-confirm-btn"
+                >
+                    Confirm Block
+                </button>
+
+            </div>
+
+        </form>
+
+        <div class="block-warning">
+            Important: Once confirmed, blocked funds cannot be
+            withdrawn or transferred until the unlock date.
         </div>
 
     </div>
@@ -137,35 +779,27 @@
     <div class="action-row">
 
         <a href="{% url 'deposit' %}">
-
             <button class="deposit" type="button">
                 Deposit
             </button>
-
         </a>
 
         <a href="{% url 'deposit_history' %}">
-
             <button class="withdraw" type="button">
                 History
             </button>
-
         </a>
 
         <a href="{% url 'withdraw' %}">
-
             <button class="withdraw" type="button">
                 Withdraw
             </button>
-
         </a>
 
         <a href="{% url 'internal_transfer' %}">
-
             <button class="withdraw" type="button">
                 Transfer
             </button>
-
         </a>
 
     </div>
@@ -177,10 +811,11 @@
 
         <div>
 
-            <h4>5% Daily Interest</h4>
+            <h4>Accumulated Interest</h4>
 
             <p class="ref-bonus">
-                + {{ daily_ref_bonus_percent|default:"0" }}% Daily Referral Bonuses
+                + {{ daily_ref_bonus_percent|default:"0" }}%
+                Daily Referral Bonuses
             </p>
 
             <h1 id="interest">
@@ -189,7 +824,10 @@
 
         </div>
 
-        <form method="POST" action="{% url 'claim_interest' %}">
+        <form
+            method="POST"
+            action="{% url 'claim_interest' %}"
+        >
 
             {% csrf_token %}
 
@@ -209,7 +847,8 @@
         <h2>🎁 Referral Program</h2>
 
         <p>
-            Invite users using your referral link. Bonuses start when they deposit.
+            Invite users using your referral link.
+            Bonuses start when they deposit.
         </p>
 
         <input
@@ -240,7 +879,6 @@
 
             </div>
 
-
             <div class="box">
 
                 <h3>🚀 Active Bonus</h3>
@@ -250,15 +888,12 @@
                 </h2>
 
                 <a href="{% url 'claim_referral_bonus' %}">
-
                     <button class="claim-small" type="button">
                         Claim
                     </button>
-
                 </a>
 
             </div>
-
 
             <div class="box">
 
@@ -269,7 +904,6 @@
                 </h2>
 
             </div>
-
 
             <div class="box">
 
@@ -293,15 +927,10 @@
             <thead>
 
                 <tr>
-
                     <th>Username</th>
-
                     <th>Status</th>
-
                     <th>Referral Bonus</th>
-
                     <th>Joined</th>
-
                 </tr>
 
             </thead>
@@ -319,13 +948,9 @@
                     <td>
 
                         {% if member.referred_user.profile.total_deposit > 0 %}
-
                             ✅ Active
-
                         {% else %}
-
                             ⏳ Inactive
-
                         {% endif %}
 
                     </td>
@@ -333,13 +958,9 @@
                     <td>
 
                         {% if member.referral_bonus %}
-
                             +{{ member.referral_bonus }}% Daily
-
                         {% else %}
-
                             No Bonus
-
                         {% endif %}
 
                     </td>
@@ -353,11 +974,9 @@
                 {% empty %}
 
                 <tr>
-
                     <td colspan="4" style="text-align:center;">
                         No referrals yet
                     </td>
-
                 </tr>
 
                 {% endfor %}
@@ -371,6 +990,293 @@
 </div>
 
 
+<!-- =====================================
+     ANNOUNCEMENT POPUP
+===================================== -->
+
+<div
+    class="announcement-overlay"
+    id="announcementOverlay"
+    aria-hidden="true"
+>
+
+    <div
+        class="announcement-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="announcementTitle"
+    >
+
+        <!-- POPUP HEADER -->
+
+        <div class="announcement-header">
+
+            <button
+                type="button"
+                class="announcement-top-close"
+                onclick="closeAnnouncement()"
+                aria-label="Close announcement"
+            >
+                ×
+            </button>
+
+            <h2 id="announcementTitle">
+                This is an important announcement
+            </h2>
+
+            <p>
+                Please take a moment to review the platform updates.
+            </p>
+
+        </div>
+
+
+        <!-- ANNOUNCEMENT BANNER -->
+
+        <div class="announcement-banner">
+
+            <div class="announcement-megaphone">
+                📢
+            </div>
+
+            <div>
+                <h3>IMPORTANT<br>ANNOUNCEMENT!</h3>
+                <span>INTERNSHIP SAVING PLATFORM</span>
+            </div>
+
+        </div>
+
+
+        <!-- SCROLLABLE ANNOUNCEMENT CONTENT -->
+
+        <div class="announcement-content">
+
+            <h3>1. Available Balance</h3>
+
+            <p>
+                Your Available Balance represents the funds currently
+                available in your wallet.
+            </p>
+
+            <ul>
+                <li>You can use it for eligible withdrawals.</li>
+                <li>You can use it to transfer funds to other users.</li>
+                <li>Available Balance does not earn the 5% daily interest.</li>
+                <li>When you block funds, the selected amount moves from Available Balance to Blocked Amount.</li>
+            </ul>
+
+
+            <h3>2. Blocked Amount</h3>
+
+            <p>
+                Blocking allows you to set aside funds for a fixed period
+                of three calendar months.
+            </p>
+
+            <ul>
+                <li>Blocked funds earn interest at the platform's stated rate of 5% per day.</li>
+                <li>Blocked funds cannot be withdrawn or transferred while they are locked.</li>
+                <li>Your unlock date is set when you make your first block.</li>
+                <li>If you add more funds to an existing block, the original unlock date remains unchanged.</li>
+                <li>Newly added funds start earning interest from the time they are added.</li>
+            </ul>
+
+            <div class="announcement-warning">
+                <strong>Important:</strong>
+                Only block funds that you are prepared to keep locked until
+                the applicable unlock date.
+            </div>
+
+
+            <h3>3. How Daily Interest Works</h3>
+
+            <p>
+                The platform calculates interest on your eligible Blocked Amount,
+                not on your Available Balance.
+            </p>
+
+            <ul>
+                <li>The stated interest rate is 5% per day.</li>
+                <li>Interest is calculated progressively based on the time funds remain blocked.</li>
+                <li>Interest is accumulated in your Interest Wallet.</li>
+                <li>When the block reaches its unlock date, interest stops accruing on that block.</li>
+            </ul>
+
+            <div class="announcement-note">
+                <strong>Remember:</strong>
+                The interest displayed on your dashboard relates to your
+                blocked funds. It is not interest on your entire wallet balance.
+            </div>
+
+
+            <h3>4. What Happens When Funds Unlock?</h3>
+
+            <p>
+                Once the three-calendar-month blocking period reaches its
+                unlock date:
+            </p>
+
+            <ul>
+                <li>Your blocked principal is released back into Available Balance.</li>
+                <li>The interest earned remains in your Interest Wallet.</li>
+                <li>You can then use the released principal according to the platform's available wallet functions.</li>
+            </ul>
+
+            <p>
+                Your account is updated when the platform processes your
+                account activity or dashboard refresh.
+            </p>
+
+
+            <h3>5. Claim Interest</h3>
+
+            <p>
+                The Claim button allows you to move your accumulated interest
+                from your Interest Wallet into your Available Balance.
+            </p>
+
+            <ul>
+                <li>Claimed interest becomes part of your Available Balance.</li>
+                <li>Available Balance does not automatically earn interest.</li>
+                <li>A seven-day waiting period applies between eligible interest claims.</li>
+                <li>You can view your current interest on the dashboard before claiming.</li>
+            </ul>
+
+
+            <h3>6. Deposits</h3>
+
+            <p>
+                You can add funds to your account through the Deposit section.
+            </p>
+
+            <ul>
+                <li>The minimum deposit is 25 USDT.</li>
+                <li>You must provide the required payment proof.</li>
+                <li>Your deposit remains Pending while it is awaiting review.</li>
+                <li>Once approved, the deposit is credited to your Available Balance.</li>
+                <li>Rejected deposits are not credited to your wallet.</li>
+            </ul>
+
+
+            <h3>7. Withdrawals</h3>
+
+            <p>
+                Withdrawals are made from your Available Balance only.
+                Blocked funds and unclaimed interest cannot be withdrawn directly.
+            </p>
+
+            <ul>
+                <li>Withdrawal requests require the necessary wallet details.</li>
+                <li>Requests are subject to platform validation and administrator approval.</li>
+                <li>When fewer than two active referrals qualify, the minimum withdrawal amount is 50 USDT.</li>
+                <li>A waiting period is applied based on your most recent withdrawal request.</li>
+                <li>Your balance is processed according to the withdrawal approval process.</li>
+            </ul>
+
+
+            <h3>8. Internal Transfers</h3>
+
+            <p>
+                The Transfer feature allows you to send funds to another
+                registered user on the platform.
+            </p>
+
+            <ul>
+                <li>Transfers use Available Balance only.</li>
+                <li>Blocked funds cannot be transferred.</li>
+                <li>Always verify the recipient's wallet details before confirming a transfer.</li>
+                <li>Completed transfers are recorded in your transaction history.</li>
+            </ul>
+
+
+            <h3>9. Referral Program</h3>
+
+            <p>
+                You can invite new users using your personal referral link.
+                Referral rewards are tracked separately from your normal
+                blocked-fund interest.
+            </p>
+
+            <ul>
+                <li>Share your referral link with people you invite.</li>
+                <li>Referral activity becomes eligible when the invited user makes a qualifying approved deposit.</li>
+                <li>The applicable referral rate depends on the qualifying deposit amount.</li>
+                <li>Your dashboard displays your referrals and referral reward information.</li>
+                <li>Use the referral Claim option to claim eligible referral rewards.</li>
+            </ul>
+
+
+            <h3>10. Transaction History</h3>
+
+            <p>
+                The History section allows you to review your wallet activity,
+                including deposits, withdrawals, and transfers.
+            </p>
+
+            <p>
+                Always review your transaction records to keep track of
+                your account activity.
+            </p>
+
+
+            <h3>11. Support</h3>
+
+            <p>
+                If you experience a problem or need assistance, use the
+                Support button on your dashboard to contact the support team.
+            </p>
+
+            <ul>
+                <li>Explain your issue clearly.</li>
+                <li>Provide relevant transaction information when necessary.</li>
+                <li>Check your support notifications for replies.</li>
+            </ul>
+
+
+            <h3>12. Account Security</h3>
+
+            <ul>
+                <li>Keep your login details private.</li>
+                <li>Never share your password with another person.</li>
+                <li>Check wallet addresses carefully before making transfers or withdrawals.</li>
+                <li>Contact Support if you notice suspicious activity.</li>
+            </ul>
+
+
+            <div class="announcement-warning">
+                <strong>Final Notice:</strong>
+                Please understand the difference between Available Balance,
+                Blocked Amount, and Interest Wallet before making financial
+                transactions. Always review the amount and details before
+                confirming an action.
+            </div>
+
+            <p>
+                Thank you for using Internship Saving.
+            </p>
+
+        </div>
+
+
+        <!-- FIXED CLOSE BUTTON -->
+
+        <div class="announcement-footer">
+
+            <button
+                type="button"
+                class="announcement-close"
+                onclick="closeAnnouncement()"
+            >
+                Close & Continue
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
 <!-- COPY REFERRAL LINK -->
 
 <script>
@@ -378,31 +1284,21 @@
 function copyLink() {
 
     const input = document.getElementById("refLink");
-
     const link = input.value;
 
     if (!link) {
-
         alert("Referral link is not available.");
-
         return;
-
     }
 
     if (navigator.share) {
 
         navigator.share({
-
             title: "Internship Saving",
-
             text: "Join Internship Saving using my referral link",
-
             url: link
-
         }).catch(error => {
-
             console.log("Share cancelled:", error);
-
         });
 
     } else if (navigator.clipboard) {
@@ -410,15 +1306,11 @@ function copyLink() {
         navigator.clipboard.writeText(link)
 
         .then(() => {
-
             alert("Referral link copied successfully!");
-
         })
 
         .catch(() => {
-
             prompt("Copy this referral link:", link);
-
         });
 
     } else {
@@ -432,15 +1324,83 @@ function copyLink() {
 </script>
 
 
+<!-- BLOCK PANEL -->
+
+<script>
+
+function openBlockPanel() {
+
+    const panel = document.getElementById("blockPanel");
+
+    panel.classList.add("show");
+
+    document.getElementById("blockAmountInput").focus();
+
+    panel.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+
+}
+
+
+function closeBlockPanel() {
+
+    document.getElementById("blockPanel").classList.remove("show");
+
+    document.getElementById("blockConfirmation").classList.remove("show");
+
+    document.getElementById("blockForm").reset();
+
+}
+
+
+function showBlockConfirmation() {
+
+    const input = document.getElementById("blockAmountInput");
+
+    const amount = Number(input.value);
+
+    const availableBalance = Number(
+        "{{ balance|default:'0' }}"
+    );
+
+    if (
+        !Number.isFinite(amount)
+        || amount <= 0
+        || amount > availableBalance
+    ) {
+
+        alert("Please enter a valid amount within your Available Balance.");
+
+        input.focus();
+
+        return;
+
+    }
+
+    document.getElementById("confirmBlockAmount").innerText =
+        amount.toFixed(8);
+
+    document.getElementById("blockConfirmation").classList.add("show");
+
+    document.getElementById("blockConfirmation").scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+    });
+
+}
+
+</script>
+
+
 <!-- AUTO DISMISS MESSAGES AFTER 5 SECONDS -->
 
 <script>
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    const messages = document.querySelectorAll(
-        ".dashboard-message"
-    );
+    const messages = document.querySelectorAll(".dashboard-message");
 
     messages.forEach(function (message) {
 
@@ -449,9 +1409,7 @@ document.addEventListener("DOMContentLoaded", function () {
             message.classList.add("hide-message");
 
             setTimeout(function () {
-
                 message.remove();
-
             }, 500);
 
         }, 5000);
@@ -473,36 +1431,35 @@ let ratePerSecond = Number(
     "{{ interest_rate_per_second|default:'0' }}"
 );
 
+let unlockTimestamp = null;
+
 const interestElement = document.getElementById("interest");
 
 function safeNumber(value) {
-
     const number = Number(value);
-
     return Number.isFinite(number) ? number : 0;
-
 }
 
 function money(value) {
-
     return "$" + safeNumber(value).toFixed(8);
-
 }
 
 function displayInterest() {
 
     if (interestElement) {
-
         interestElement.innerText = money(interest);
-
     }
 
 }
 
 
-// Count interest every second
+/* INTEREST COUNTER */
 
 setInterval(function () {
+
+    if (unlockTimestamp && Date.now() >= unlockTimestamp) {
+        ratePerSecond = 0;
+    }
 
     interest += ratePerSecond;
 
@@ -511,7 +1468,47 @@ setInterval(function () {
 }, 1000);
 
 
-// Get fresh values from Django
+/* UNLOCK COUNTDOWN */
+
+function renderUnlockCountdown() {
+
+    const countdown = document.getElementById("unlockCountdown");
+
+    if (!countdown) return;
+
+    if (!unlockTimestamp) {
+        countdown.innerText = "No active block";
+        return;
+    }
+
+    let remaining = Math.floor(
+        (unlockTimestamp - Date.now()) / 1000
+    );
+
+    if (remaining <= 0) {
+        countdown.innerText = "Unlocking...";
+        return;
+    }
+
+    const days = Math.floor(remaining / 86400);
+    remaining %= 86400;
+
+    const hours = Math.floor(remaining / 3600);
+    remaining %= 3600;
+
+    const minutes = Math.floor(remaining / 60);
+    const seconds = remaining % 60;
+
+    countdown.innerText =
+        days + "d " +
+        hours + "h " +
+        minutes + "m " +
+        seconds + "s";
+
+}
+
+
+/* GET FRESH DASHBOARD DATA */
 
 async function updateDashboard() {
 
@@ -521,16 +1518,15 @@ async function updateDashboard() {
             "{% url 'live_balance' %}"
         );
 
-        if (!response.ok) {
-
-            return;
-
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
 
         document.getElementById("balance").innerText =
             money(data.balance);
+
+        document.getElementById("blockedAmount").innerText =
+            money(data.blocked_amount);
 
         interest = safeNumber(data.interest);
 
@@ -549,6 +1545,59 @@ async function updateDashboard() {
         document.getElementById("referral_profit").innerText =
             money(data.referral_profit);
 
+
+        /* UPDATE BLOCK INFORMATION */
+
+        const unlockInfo = document.getElementById("unlockInfo");
+
+        const noActiveBlock = document.getElementById("noActiveBlock");
+
+        const unlockDateElement = document.getElementById("unlockDate");
+
+        if (
+            safeNumber(data.blocked_amount) > 0 &&
+            data.block_unlock_at
+        ) {
+
+            unlockTimestamp = new Date(
+                data.block_unlock_at
+            ).getTime();
+
+            if (!Number.isFinite(unlockTimestamp)) {
+                unlockTimestamp = null;
+            }
+
+            unlockInfo.style.display = "block";
+
+            noActiveBlock.style.display = "none";
+
+            const unlockDate = new Date(data.block_unlock_at);
+
+            if (!Number.isNaN(unlockDate.getTime())) {
+
+                unlockDateElement.innerText =
+                    unlockDate.toLocaleString();
+
+            }
+
+        } else {
+
+            unlockTimestamp = null;
+
+            unlockInfo.style.display = "none";
+
+            noActiveBlock.style.display = "block";
+
+        }
+
+        renderUnlockCountdown();
+
+
+        /* UPDATE MAXIMUM BLOCK AMOUNT */
+
+        document.getElementById("blockAmountInput").max =
+            data.balance;
+
     } catch (error) {
 
         console.log("Dashboard update error:", error);
@@ -557,14 +1606,16 @@ async function updateDashboard() {
 
 }
 
+
+/* START DASHBOARD */
+
 displayInterest();
 
 updateDashboard();
 
-
-// Synchronize with server every 5 seconds
-
 setInterval(updateDashboard, 5000);
+
+setInterval(renderUnlockCountdown, 1000);
 
 </script>
 
@@ -580,9 +1631,7 @@ function refreshSupportBadge() {
     .then(response => {
 
         if (!response.ok) {
-
             throw new Error("Support request failed");
-
         }
 
         return response.json();
@@ -593,11 +1642,7 @@ function refreshSupportBadge() {
 
         const badge = document.getElementById("supportBadge");
 
-        if (!badge) {
-
-            return;
-
-        }
+        if (!badge) return;
 
         const count = Number(data.count) || 0;
 
@@ -632,7 +1677,59 @@ setInterval(refreshSupportBadge, 30000);
 </script>
 
 
-<!-- SMALL FIXED SUPPORT BUTTON - RIGHT BOTTOM -->
+<!-- ANNOUNCEMENT OPEN AND CLOSE -->
+
+<script>
+
+(function () {
+
+    const overlay = document.getElementById("announcementOverlay");
+
+    if (!overlay) return;
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("announcement") === "1") {
+
+        overlay.classList.add("is-open");
+
+        overlay.setAttribute("aria-hidden", "false");
+
+        document.body.style.overflow = "hidden";
+
+    }
+
+})();
+
+
+function closeAnnouncement() {
+
+    const overlay = document.getElementById("announcementOverlay");
+
+    if (!overlay) return;
+
+    overlay.classList.remove("is-open");
+
+    overlay.setAttribute("aria-hidden", "true");
+
+    document.body.style.overflow = "";
+
+    const url = new URL(window.location.href);
+
+    url.searchParams.delete("announcement");
+
+    window.history.replaceState(
+        {},
+        document.title,
+        url.pathname + url.search + url.hash
+    );
+
+}
+
+</script>
+
+
+<!-- SUPPORT BUTTON -->
 
 <a href="/support/" class="support-floating-btn">
 
@@ -650,5 +1747,4 @@ setInterval(refreshSupportBadge, 30000);
 
 
 </body>
-
 </html>

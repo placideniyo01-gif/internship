@@ -1,3 +1,4 @@
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -12,10 +13,30 @@ class Profile(models.Model):
         on_delete=models.CASCADE
     )
 
+    # Available balance: amafaranga ashobora gukoreshwa
     balance = models.DecimalField(
         max_digits=20,
         decimal_places=8,
         default=0
+    )
+
+    # Blocked balance: amafaranga afunze amezi 3
+    blocked_amount = models.DecimalField(
+        max_digits=20,
+        decimal_places=8,
+        default=0
+    )
+
+    # Itariki amafaranga yafungiweho bwa mbere
+    block_started_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    # Itariki amafaranga azafungurirwaho
+    block_unlock_at = models.DateTimeField(
+        null=True,
+        blank=True
     )
 
     total_deposit = models.DecimalField(
@@ -29,6 +50,7 @@ class Profile(models.Model):
         decimal_places=8,
         default=0
     )
+
     referral_code = models.CharField(
         max_length=50,
         unique=True,
@@ -111,6 +133,7 @@ class Referral(models.Model):
     def __str__(self):
         return f"{self.referrer.username} -> {self.referred_user.username}"
 
+
 class ReferralDeposit(models.Model):
 
     referral = models.ForeignKey(
@@ -147,6 +170,7 @@ class ReferralDeposit(models.Model):
         return str(
             self.referral.referred_user.username
         )
+
 
 class ReferralBonus(models.Model):
 
@@ -191,7 +215,7 @@ class InterestWallet(models.Model):
         default=timezone.now
     )
 
-    # Interest starts after the first approved deposit
+    # Retained for existing deposit-related logic
     started_at = models.DateTimeField(
         null=True,
         blank=True
@@ -205,6 +229,7 @@ class InterestWallet(models.Model):
 
     def __str__(self):
         return self.user.username
+
 
 class EmailVerification(models.Model):
 
@@ -223,6 +248,7 @@ class EmailVerification(models.Model):
 
     def __str__(self):
         return self.user.username
+
 
 class PasswordReset(models.Model):
 
