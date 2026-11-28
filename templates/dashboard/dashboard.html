@@ -5,15 +5,19 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
     <title>Treasury Dashboard</title>
+
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
     <style>
+
         .dashboard-message {
             padding: 13px 16px;
             margin: 10px 0;
@@ -69,40 +73,6 @@
             text-decoration: none;
         }
 
-        /* SUPPORT BUTTON - RIGHT BOTTOM */
-        .support-btn {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            z-index: 9999;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-
-            padding: 13px 20px;
-            background: #007bff;
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: bold;
-
-            border-radius: 30px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-        }
-
-        .support-btn:hover {
-            background: #0056b3;
-        }
-
-        @media (max-width: 600px) {
-            .support-btn {
-                right: 15px;
-                bottom: 15px;
-                padding: 12px 17px;
-            }
-        }
     </style>
 
 </head>
@@ -112,6 +82,7 @@
 <div class="container">
 
     <!-- HEADER -->
+
     <div class="header">
 
         <a href="{% url 'settings' %}" class="settings-btn">
@@ -119,12 +90,14 @@
         </a>
 
         <h3>Hello</h3>
+
         <h1>{{ username|upper }}</h1>
 
     </div>
 
 
     <!-- BALANCE -->
+
     <div class="balance-card">
 
         <h4>Balance</h4>
@@ -141,6 +114,7 @@
 
 
     <!-- DJANGO MESSAGES -->
+
     {% if messages %}
 
     <div id="dashboard-messages">
@@ -159,36 +133,46 @@
 
 
     <!-- ACTION BUTTONS -->
+
     <div class="action-row">
 
         <a href="{% url 'deposit' %}">
+
             <button class="deposit" type="button">
                 Deposit
             </button>
+
         </a>
 
         <a href="{% url 'deposit_history' %}">
+
             <button class="withdraw" type="button">
                 History
             </button>
+
         </a>
 
         <a href="{% url 'withdraw' %}">
+
             <button class="withdraw" type="button">
                 Withdraw
             </button>
+
         </a>
 
         <a href="{% url 'internal_transfer' %}">
+
             <button class="withdraw" type="button">
                 Transfer
             </button>
+
         </a>
 
     </div>
 
 
     <!-- INTEREST -->
+
     <div class="interest-card">
 
         <div>
@@ -219,6 +203,7 @@
 
 
     <!-- REFERRAL -->
+
     <div class="referral-card">
 
         <h2>🎁 Referral Program</h2>
@@ -244,11 +229,13 @@
 
 
         <!-- REFERRAL STATS -->
+
         <div class="stats-grid">
 
             <div class="box">
 
                 <h3>👥 Referrals</h3>
+
                 <h2>{{ referrals }}</h2>
 
             </div>
@@ -263,9 +250,11 @@
                 </h2>
 
                 <a href="{% url 'claim_referral_bonus' %}">
+
                     <button class="claim-small" type="button">
                         Claim
                     </button>
+
                 </a>
 
             </div>
@@ -296,6 +285,7 @@
 
 
         <!-- REFERRAL TEAM -->
+
         <h3>Your Referral Team</h3>
 
         <table width="100%" border="1">
@@ -303,10 +293,15 @@
             <thead>
 
                 <tr>
+
                     <th>Username</th>
+
                     <th>Status</th>
+
                     <th>Referral Bonus</th>
+
                     <th>Joined</th>
+
                 </tr>
 
             </thead>
@@ -324,9 +319,13 @@
                     <td>
 
                         {% if member.referred_user.profile.total_deposit > 0 %}
+
                             ✅ Active
+
                         {% else %}
+
                             ⏳ Inactive
+
                         {% endif %}
 
                     </td>
@@ -334,9 +333,13 @@
                     <td>
 
                         {% if member.referral_bonus %}
+
                             +{{ member.referral_bonus }}% Daily
+
                         {% else %}
+
                             No Bonus
+
                         {% endif %}
 
                     </td>
@@ -369,26 +372,37 @@
 
 
 <!-- COPY REFERRAL LINK -->
+
 <script>
 
 function copyLink() {
 
     const input = document.getElementById("refLink");
+
     const link = input.value;
 
     if (!link) {
+
         alert("Referral link is not available.");
+
         return;
+
     }
 
     if (navigator.share) {
 
         navigator.share({
+
             title: "Internship Saving",
+
             text: "Join Internship Saving using my referral link",
+
             url: link
+
         }).catch(error => {
+
             console.log("Share cancelled:", error);
+
         });
 
     } else if (navigator.clipboard) {
@@ -396,11 +410,15 @@ function copyLink() {
         navigator.clipboard.writeText(link)
 
         .then(() => {
+
             alert("Referral link copied successfully!");
+
         })
 
         .catch(() => {
+
             prompt("Copy this referral link:", link);
+
         });
 
     } else {
@@ -415,6 +433,7 @@ function copyLink() {
 
 
 <!-- AUTO DISMISS MESSAGES AFTER 5 SECONDS -->
+
 <script>
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -430,7 +449,9 @@ document.addEventListener("DOMContentLoaded", function () {
             message.classList.add("hide-message");
 
             setTimeout(function () {
+
                 message.remove();
+
             }, 500);
 
         }, 5000);
@@ -443,6 +464,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 <!-- LIVE DASHBOARD AND INTEREST -->
+
 <script>
 
 let interest = Number("{{ interest|default:'0' }}");
@@ -470,22 +492,27 @@ function money(value) {
 function displayInterest() {
 
     if (interestElement) {
+
         interestElement.innerText = money(interest);
+
     }
 
 }
 
 
 // Count interest every second
+
 setInterval(function () {
 
     interest += ratePerSecond;
+
     displayInterest();
 
 }, 1000);
 
 
 // Get fresh values from Django
+
 async function updateDashboard() {
 
     try {
@@ -495,7 +522,9 @@ async function updateDashboard() {
         );
 
         if (!response.ok) {
+
             return;
+
         }
 
         const data = await response.json();
@@ -529,16 +558,19 @@ async function updateDashboard() {
 }
 
 displayInterest();
+
 updateDashboard();
 
 
 // Synchronize with server every 5 seconds
+
 setInterval(updateDashboard, 5000);
 
 </script>
 
 
 <!-- SUPPORT NOTIFICATIONS -->
+
 <script>
 
 function refreshSupportBadge() {
@@ -548,7 +580,9 @@ function refreshSupportBadge() {
     .then(response => {
 
         if (!response.ok) {
+
             throw new Error("Support request failed");
+
         }
 
         return response.json();
@@ -560,7 +594,9 @@ function refreshSupportBadge() {
         const badge = document.getElementById("supportBadge");
 
         if (!badge) {
+
             return;
+
         }
 
         const count = Number(data.count) || 0;
@@ -568,11 +604,13 @@ function refreshSupportBadge() {
         if (count > 0) {
 
             badge.style.display = "inline-block";
+
             badge.innerText = count;
 
         } else {
 
             badge.style.display = "none";
+
             badge.innerText = "";
 
         }
@@ -594,8 +632,9 @@ setInterval(refreshSupportBadge, 30000);
 </script>
 
 
-<!-- FIXED SUPPORT BUTTON - RIGHT BOTTOM -->
-<a href="/support/" class="support-btn">
+<!-- SMALL FIXED SUPPORT BUTTON - RIGHT BOTTOM -->
+
+<a href="/support/" class="support-floating-btn">
 
     💬 Support
 
@@ -611,4 +650,5 @@ setInterval(refreshSupportBadge, 30000);
 
 
 </body>
+
 </html>
